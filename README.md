@@ -14,7 +14,7 @@ third-party source trees.
 
 | Area | What it does | Runtime | Platform | Writes files |
 | --- | --- | --- | --- | --- |
-| [`lyric-video-maker/`](lyric-video-maker/) | Turns audio, cover art, and timed lyrics into a karaoke-style MP4 | Python 3, ffmpeg with libass; MacWhisper optional | macOS UI; render pipeline is portable | Yes |
+| [`lyric-video-maker/`](lyric-video-maker/) | Turns audio, cover art, and timed lyrics into landscape or portrait karaoke MP4s | Python 3, ffmpeg with libass; MacWhisper optional | macOS UI; render pipeline is portable | Yes |
 | [`audio-analysis/`](audio-analysis/) | Measures stereo beat layers, joins, onsets, pace, and prepares voice references | Python 3; NumPy/SciPy/soundfile for beat analysis; ffmpeg for corpus cutting | macOS/Linux | Some tools |
 | [`gateway-authoring/`](gateway-authoring/) | Indexes measured signals, verifies a speech corpus, and seeds provisional Gateway Forge briefings | Python 3 | macOS/Linux | Yes |
 | [`piper-workflows/`](piper-workflows/) | Piper training, export, render, audition, and direct-inference wrappers for known upstream failure modes | Python 3 plus a compatible Piper training environment | Primarily macOS/Linux | Yes |

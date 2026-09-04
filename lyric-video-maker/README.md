@@ -1,7 +1,8 @@
 # Lyric Video Maker
 
-Turn an audio track, cover image, and word timings into a 1920x1080 karaoke
-video with burned-in lyrics.
+Turn an audio track, cover image, and word timings into a karaoke video with
+burned-in lyrics. Choose landscape (1920x1080) for desktop/YouTube or portrait
+(1080x1920) for Shorts and Reels.
 
 ## Requirements
 
@@ -25,8 +26,10 @@ The app opens a token-protected page on `127.0.0.1`. The token changes every
 run; use the page opened by the app rather than typing the bare address.
 
 Select a single file or a folder, choose cover art, optionally select a lyric
-sheet and output folder, then create the video. A batch uses the same cover and
-processes supported audio files sequentially.
+sheet and output folder, choose the output format, then create the video. A
+batch uses the same cover and processes supported audio files sequentially.
+Portrait renders use a conservative mobile-safe lyric position and add
+`-short` to the filename so they can sit beside the landscape render.
 
 ## Correct lyrics
 
@@ -43,8 +46,11 @@ Timed JSON is searched beside the audio as `<song>.words.json` and then
 
 ```sh
 python3 lyric-video-maker/app.py --render \
-  --audio song.wav --json song.words.json --cover cover.jpg --out song.mp4
+  --audio song.wav --json song.words.json --cover cover.jpg \
+  --format portrait --out song-short.mp4
 ```
+
+Omit `--format portrait` (or pass `--format landscape`) for a 1920x1080 video.
 
 Convert the simple MacWhisper word-list form to SRT with:
 

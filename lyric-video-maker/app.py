@@ -5,8 +5,8 @@ Lyric Video Maker — browser GUI + processing backend.
 Pipeline per song:
   1. MacWhisper CLI (mw) -> word-timed transcript JSON  (or reuse existing .json)
   2. lyrics_engine       -> karaoke .ass subtitles (3 colours + black outline)
-  3. ffmpeg              -> cover art (16:9 centre-crop) + audio + burned-in
-                            subtitles = 1920x1080 60fps .mp4
+  3. ffmpeg              -> centre-cropped cover + audio + burned-in subtitles
+                            at 1920x1080 or 1080x1920, 60fps .mp4
 
 Run:  python3 app.py          (opens http://127.0.0.1:8765 in your browser)
 Test: python3 app.py --render --audio a.wav --json t.json --cover c.jpg --out o.mp4
@@ -31,6 +31,7 @@ from urllib.parse import parse_qs, urlparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lyrics_engine
 import lyrics_align
+import video_formats
 
 PORT = 8765
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -46,6 +47,7 @@ DEFAULTS = {
     "lineGap": 1.2,
     "mwCmd": 'mw transcribe --persist "{input}"',
     "preset": "medium",
+    "format": "landscape",
 }
 
 JOBS = {}        # job_id -> state dict
@@ -243,14 +245,16 @@ def find_existing_json(audio):
     return None
 
 
-def prepare_cover(cover, out_dir):
-    """Centre-crop the cover art to 1920x1080 once (much faster than
-    scaling the full-size image on every frame)."""
-    scaled = os.path.join(out_dir, "._cover_1080.png")
+def prepare_cover(cover, out_dir, format_name):
+    """Centre-crop cover art once, at the selected output dimensions."""
+    profile = video_formats.get_video_format(format_name)
+    width, height = profile["width"], profile["height"]
+    scaled = os.path.join(
+        out_dir, f"._cover_{width}x{height}_{uuid.uuid4().hex[:8]}.png")
     r = subprocess.run(
         [FFMPEG, "-y", "-i", cover,
-         "-vf", "scale=1920:1080:force_original_aspect_ratio=increase,"
-                "crop=1920:1080,setsar=1",
+         "-vf", f"scale={width}:{height}:force_original_aspect_ratio=increase,"
+                f"crop={width}:{height},setsar=1",
          "-frames:v", "1", scaled],
         capture_output=True, text=True)
     if r.returncode != 0:
@@ -258,16 +262,17 @@ def prepare_cover(cover, out_dir):
     return scaled
 
 
-def render_video(job, audio, cover, ass_path, out_path, preset="medium"):
+def render_video(job, audio, cover, ass_path, out_path, preset="medium",
+                 format_name="landscape"):
     if not FFMPEG:
         raise RuntimeError(
             "No ffmpeg with subtitle support found. Run: "
             "brew install ffmpeg-full")
     dur = audio_duration(audio)
-    cover1080 = prepare_cover(cover, os.path.dirname(out_path))
+    prepared_cover = prepare_cover(cover, os.path.dirname(out_path), format_name)
     sub = escape_for_subtitles_filter(ass_path)
     vf = f"fps=60,subtitles='{sub}'"
-    cmd = [FFMPEG, "-y", "-loop", "1", "-framerate", "60", "-i", cover1080,
+    cmd = [FFMPEG, "-y", "-loop", "1", "-framerate", "60", "-i", prepared_cover,
            "-i", audio,
            "-vf", vf,
            "-c:v", "libx264", "-preset", preset, "-crf", "18",
@@ -296,7 +301,7 @@ def render_video(job, audio, cover, ass_path, out_path, preset="medium"):
                 pass
     proc.wait()
     try:
-        os.remove(cover1080)
+        os.remove(prepared_cover)
     except OSError:
         pass
     if proc.returncode != 0:
@@ -307,7 +312,9 @@ def process_item(job, item, settings):
     audio, cover = item["audio"], settings["cover"]
     name = os.path.splitext(os.path.basename(audio))[0]
     out_dir = settings.get("outputDir") or os.path.dirname(audio)
-    out_path = os.path.join(out_dir, name + ".mp4")
+    format_name = settings.get("format", DEFAULTS["format"])
+    profile = video_formats.get_video_format(format_name)
+    out_path = os.path.join(out_dir, video_formats.output_name(audio, format_name))
 
     set_state(job, current=os.path.basename(audio), progress=0.0)
 
@@ -353,7 +360,7 @@ def process_item(job, item, settings):
 
     # 2. subtitles
     set_state(job, stage="styling")
-    ass_path = os.path.join(out_dir, name + ".ass")
+    ass_path = os.path.join(out_dir, name + profile["suffix"] + ".ass")
     nwords, nlines, used_mode = lyrics_engine.transcript_to_ass(
         tjson, ass_path,
         colors={"accent": settings["accent"], "active": settings["active"],
@@ -362,15 +369,18 @@ def process_item(job, item, settings):
         size_mode=settings.get("sizeMode", DEFAULTS["sizeMode"]),
         spacing=settings.get("spacing", DEFAULTS["spacing"]),
         smart=bool(settings.get("smartSize", False)),
-        gap_break=float(settings.get("lineGap", DEFAULTS["lineGap"])))
+        gap_break=float(settings.get("lineGap", DEFAULTS["lineGap"])),
+        video_format=format_name)
     smart_note = " (Smart)" if settings.get("smartSize") else ""
     log(job, f"Styled {nwords} words into {nlines} lyric lines "
-             f"— {used_mode} size{smart_note}")
+             f"— {used_mode} size{smart_note} · "
+             f"{profile['width']}x{profile['height']}")
     set_state(job, progress=0.40)
 
     # 3. video
     render_video(job, audio, cover, ass_path, out_path,
-                 preset=settings.get("preset", "medium"))
+                 preset=settings.get("preset", "medium"),
+                 format_name=format_name)
     log(job, f"Done: {out_path}")
     return out_path
 
@@ -492,7 +502,8 @@ class Handler(BaseHTTPRequestHandler):
                     job = JOBS.get(jid)
                     self._send(200, dict(job) if job else {"error": "unknown job"})
             elif parsed.path == "/api/defaults":
-                self._send(200, DEFAULTS)
+                self._send(200, {**DEFAULTS,
+                                 "formats": video_formats.VIDEO_FORMATS})
             else:
                 self._send(404, {"error": "not found"})
         else:
@@ -527,6 +538,12 @@ class Handler(BaseHTTPRequestHandler):
             if not files or not cover:
                 self._send(400, {"error": "audio file(s) and cover art are required"})
                 return
+            format_name = payload.get("format", DEFAULTS["format"])
+            try:
+                video_formats.get_video_format(format_name)
+            except ValueError as exc:
+                self._send(400, {"error": str(exc)})
+                return
             jid = uuid.uuid4().hex[:8]
             job = {"id": jid, "status": "running", "stage": "queued",
                    "progress": 0.0, "current": "", "itemIndex": 0,
@@ -537,7 +554,7 @@ class Handler(BaseHTTPRequestHandler):
             settings = {k: payload.get(k, DEFAULTS.get(k)) for k in
                         ("accent", "active", "inactive", "font", "sizeMode",
                          "smartSize", "spacing", "lineGap", "mwCmd",
-                         "reuseJson", "outputDir", "lyricsFile")}
+                         "reuseJson", "outputDir", "lyricsFile", "format")}
             settings["cover"] = cover
             threading.Thread(target=worker, args=(job, settings),
                              daemon=True).start()
@@ -572,7 +589,8 @@ def cli_render(args):
            "results": [], "errors": []}
     settings = dict(DEFAULTS)
     settings.update({"cover": args.cover, "reuseJson": True,
-                     "outputDir": os.path.dirname(os.path.abspath(args.out))})
+                     "outputDir": os.path.dirname(os.path.abspath(args.out)),
+                     "format": args.format})
     if args.accent:
         settings["accent"] = args.accent
     if args.preset:
@@ -584,7 +602,7 @@ def cli_render(args):
             shutil.copy(args.json, base)
     out = process_item(job, job["items"][0], settings)
     src = os.path.join(os.path.dirname(os.path.abspath(args.out)),
-                       os.path.splitext(os.path.basename(args.audio))[0] + ".mp4")
+                       video_formats.output_name(args.audio, args.format))
     if os.path.abspath(src) != os.path.abspath(args.out):
         os.replace(src, args.out)
     for l in job["log"]:
@@ -601,6 +619,8 @@ if __name__ == "__main__":
     ap.add_argument("--out")
     ap.add_argument("--accent")
     ap.add_argument("--preset")
+    ap.add_argument("--format", choices=tuple(video_formats.VIDEO_FORMATS),
+                    default=DEFAULTS["format"])
     a = ap.parse_args()
     if a.render:
         missing = [name for name in ("audio", "cover", "out")

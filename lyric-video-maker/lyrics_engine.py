@@ -18,6 +18,8 @@ Accepted JSON shapes:
 import json
 import re
 
+import video_formats
+
 # ---------------------------------------------------------------- parsing
 
 def _parse_clock(t):
@@ -143,8 +145,8 @@ def _esc(text):
 ASS_HEADER = """[Script Info]
 Title: Lyric video subtitles
 ScriptType: v4.00+
-PlayResX: 1920
-PlayResY: 1080
+PlayResX: {play_res_x}
+PlayResY: {play_res_y}
 WrapStyle: 2
 ScaledBorderAndShadow: yes
 
@@ -157,17 +159,8 @@ Style: Inactive,{font},{inactive_size},{inactive},{inactive},&H000000&,&H8000000
 Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Text
 """
 
-# font-size modes: (max chars per line, active px, inactive px)
-SIZE_MODES = {
-    "big":     (12, 108, 80),
-    "default": (24, 72, 54),
-    "dense":   (36, 54, 42),
-}
-
 # line-spacing modes: gap between line centres as a multiple of active size
 SPACING_MODES = {"tight": 0.95, "normal": 1.25, "wide": 1.6}
-
-INACTIVE_BASE_Y = 985   # inactive line sits here; active line stacks above
 
 
 def smart_size_mode(words, gap_break=1.2):
@@ -187,19 +180,22 @@ def smart_size_mode(words, gap_break=1.2):
 
 
 def build_ass(lines, colors, font="Arial Black",
-              active_size=72, inactive_size=54, gap=90, hold=0.35):
+              active_size=72, inactive_size=54, gap=90, hold=0.35,
+              video_width=1920, video_height=1080, inactive_y=None):
     """Build the ASS document string.
 
     colors: {'accent': '#RRGGBB', 'active': '#RRGGBB', 'inactive': '#RRGGBB'}
     gap: distance in px between the active and inactive line centres
     """
-    inactive_y = INACTIVE_BASE_Y
+    if inactive_y is None:
+        inactive_y = video_height - 130
     active_y = inactive_y - gap
     accent = hex_to_ass(colors.get("accent", "#FFD400"))
     active = hex_to_ass(colors.get("active", "#FFFFFF"))
     inactive = hex_to_ass(colors.get("inactive", "#8A99A8"))
 
     out = [ASS_HEADER.format(
+        play_res_x=video_width, play_res_y=video_height,
         font=font, active_size=active_size, inactive_size=inactive_size,
         active=active, inactive=inactive,
         outline_w=max(3, round(active_size / 17)),
@@ -210,7 +206,7 @@ def build_ass(lines, colors, font="Arial Black",
             return
         out.append(
             f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},{style},,0,0,0,"
-            f"{{\\an5\\pos(960,{y})}}{text}\n")
+            f"{{\\an5\\pos({video_width // 2},{y})}}{text}\n")
 
     n = len(lines)
     for i, line in enumerate(lines):
@@ -257,7 +253,7 @@ def build_ass(lines, colors, font="Arial Black",
 
 def transcript_to_ass(json_path, ass_path, colors, font="Arial Black",
                       size_mode="default", spacing="tight", smart=False,
-                      gap_break=1.2):
+                      gap_break=1.2, video_format="landscape"):
     # corrected/aligned transcripts carry their own line structure
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -279,8 +275,10 @@ def transcript_to_ass(json_path, ass_path, colors, font="Arial Black",
                          "dense" if median >= 30 else "default")
         else:
             size_mode = smart_size_mode(words, gap_break=gap_break)
-    max_chars, active_size, inactive_size = SIZE_MODES.get(
-        size_mode, SIZE_MODES["default"])
+    profile = video_formats.get_video_format(video_format)
+    sizes = profile["sizes"]
+    max_chars, active_size, inactive_size = sizes.get(
+        size_mode, sizes["default"])
     gap = round(active_size * SPACING_MODES.get(spacing,
                                                 SPACING_MODES["tight"]))
 
@@ -297,7 +295,10 @@ def transcript_to_ass(json_path, ass_path, colors, font="Arial Black",
         lines = group_lines(words, max_chars=max_chars, max_words=max_words,
                             gap_break=gap_break)
     doc = build_ass(lines, colors, font=font, active_size=active_size,
-                    inactive_size=inactive_size, gap=gap)
+                    inactive_size=inactive_size, gap=gap,
+                    video_width=profile["width"],
+                    video_height=profile["height"],
+                    inactive_y=profile["inactive_y"])
     with open(ass_path, "w", encoding="utf-8") as f:
         f.write(doc)
     return len(words), len(lines), size_mode
