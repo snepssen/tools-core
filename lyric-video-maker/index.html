@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lyric Video Maker</title>
+<style>
+  :root{--bg:#111417;--card:#1b2026;--edge:#2a323b;--txt:#e8edf2;--dim:#8a99a8;--acc:#ffd400}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--txt);font:15px/1.5 -apple-system,'Helvetica Neue',sans-serif;padding:32px;max-width:880px;margin:0 auto}
+  h1{font-size:22px;margin-bottom:4px}
+  .sub{color:var(--dim);margin-bottom:24px}
+  .card{background:var(--card);border:1px solid var(--edge);border-radius:12px;padding:20px;margin-bottom:16px}
+  .card h2{font-size:13px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);margin-bottom:14px}
+  .row{display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+  button{background:#2c3540;color:var(--txt);border:1px solid var(--edge);border-radius:8px;padding:8px 14px;cursor:pointer;font-size:14px}
+  button:hover{background:#37424f}
+  button.primary{background:var(--acc);color:#111;font-weight:700;border:none;padding:12px 28px;font-size:16px}
+  button.primary:disabled{opacity:.4;cursor:default}
+  .path{color:var(--dim);font-size:13px;word-break:break-all;flex:1}
+  .tabs{display:flex;gap:8px;margin-bottom:16px}
+  .tabs button{border-radius:20px;padding:7px 20px}
+  .tabs button.on{background:var(--acc);color:#111;font-weight:700;border-color:transparent}
+  label.small{font-size:13px;color:var(--dim)}
+  input[type=color]{width:44px;height:32px;border:none;background:none;cursor:pointer}
+  input[type=text],input[type=number]{background:#12161a;border:1px solid var(--edge);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:13px}
+  .colors{display:flex;gap:28px;flex-wrap:wrap}
+  .colors>div{display:flex;flex-direction:column;align-items:center;gap:4px}
+  #preview{border-radius:10px;width:100%;display:block;background:#000}
+  details{margin-top:6px} summary{cursor:pointer;color:var(--dim);font-size:13px}
+  .adv{margin-top:12px;display:flex;flex-direction:column;gap:10px}
+  .adv .row{margin:0}
+  #log{background:#0c0f12;border-radius:8px;padding:12px;font:12px/1.6 ui-monospace,Menlo,monospace;color:#9fb0c0;max-height:220px;overflow-y:auto;white-space:pre-wrap;display:none}
+  .bar{height:10px;background:#0c0f12;border-radius:6px;overflow:hidden;margin:10px 0;display:none}
+  .bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+  #stage{color:var(--dim);font-size:13px}
+  .filelist{font-size:13px;color:var(--dim);margin-top:6px}
+  .ok{color:#6ee7a0}.err{color:#ff7b72}
+</style>
+</head>
+<body>
+<h1>Lyric Video Maker</h1>
+<p class="sub">.wav → MacWhisper word timings → karaoke lyrics → 1080p60 .mp4</p>
+
+<div class="card">
+  <div class="tabs">
+    <button id="tabSingle" class="on" onclick="setMode('single')">Single file</button>
+    <button id="tabBatch" onclick="setMode('batch')">Batch</button>
+  </div>
+  <div class="row">
+    <button onclick="pickAudio()" id="audioBtn">Choose audio…</button>
+    <span class="path" id="audioPath">nothing selected</span>
+  </div>
+  <div class="filelist" id="fileList"></div>
+  <div class="row">
+    <button onclick="pickCover()">Choose cover art…</button>
+    <span class="path" id="coverPath">nothing selected</span>
+  </div>
+  <div class="row">
+    <button onclick="pickLyrics()">Correct lyrics… (optional)</button>
+    <span class="path" id="lyricsPath">none — raw transcription will be used</span>
+  </div>
+  <div class="row">
+    <button onclick="pickOut()">Output folder…</button>
+    <span class="path" id="outPath">same folder as each audio file</span>
+  </div>
+</div>
+
+<div class="card">
+  <h2>Lyric colours — live preview</h2>
+  <canvas id="preview" width="880" height="240"></canvas>
+  <div style="height:14px"></div>
+  <div class="colors">
+    <div><input type="color" id="cAccent" value="#ffd400"><label class="small">Word being voiced</label></div>
+    <div><input type="color" id="cActive" value="#ffffff"><label class="small">Active line</label></div>
+    <div><input type="color" id="cInactive" value="#8a99a8"><label class="small">Inactive line</label></div>
+    <div style="align-items:flex-start;min-width:200px">
+      <select id="font" style="background:#12161a;border:1px solid var(--edge);color:var(--txt);border-radius:8px;padding:8px 10px;font-size:13px;width:100%">
+        <option>SF Pro Display</option>
+        <option>SF Pro Rounded</option>
+        <option>Helvetica Neue</option>
+        <option>Avenir Next</option>
+        <option>Futura</option>
+        <option>Geneva</option>
+        <option>Lato</option>
+        <option>Arial Black</option>
+        <option>Impact</option>
+        <option>Verdana</option>
+        <option value="__custom">Custom…</option>
+      </select>
+      <input type="text" id="fontCustom" placeholder="Font name" style="display:none;width:100%;margin-top:6px">
+      <label class="small">Font</label>
+    </div>
+  </div>
+  <div style="height:18px"></div>
+  <div class="row" style="gap:40px">
+    <div style="flex:1">
+      <label class="small">Font size <span id="sizeLbl"></span></label>
+      <input type="range" id="sizeSlider" min="0" max="2" step="1" value="1" style="width:100%">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim)"><span>Big (12 ch)</span><span>Default (24 ch)</span><span>Dense (36 ch)</span></div>
+      <label class="small" style="display:block;margin-top:6px"><input type="checkbox" id="smartSize"> <b>Smart</b> — pick the best size per track automatically</label>
+    </div>
+    <div style="flex:1">
+      <label class="small">Line spacing</label>
+      <input type="range" id="spaceSlider" min="0" max="2" step="1" value="0" style="width:100%">
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim)"><span>Tight</span><span>Normal</span><span>Wide</span></div>
+    </div>
+  </div>
+  <details>
+    <summary>Advanced</summary>
+    <div class="adv">
+      <div class="row"><label class="small" style="width:180px">Line break pause (seconds)</label><input type="number" id="lineGap" value="1.2" min="0.2" max="4" step="0.1" style="width:80px"></div>
+      <div class="row"><label class="small" style="width:180px">MacWhisper command</label><input type="text" id="mwCmd" style="flex:1"></div>
+      <div class="row"><label class="small"><input type="checkbox" id="reuseJson" checked> Reuse existing transcript .json next to the audio file if present</label></div>
+    </div>
+  </details>
+</div>
+
+<div class="card">
+  <div class="row">
+    <button class="primary" id="go" onclick="start()">Create video</button>
+    <span id="stage"></span>
+  </div>
+  <div class="bar" id="bar"><i id="fill"></i></div>
+  <div id="log"></div>
+</div>
+
+<script>
+let mode='single', files=[], cover='', outDir='';
+const serverToken=new URLSearchParams(location.search).get('token')||'';
+
+function setMode(m){
+  mode=m;
+  document.getElementById('tabSingle').classList.toggle('on', m==='single');
+  document.getElementById('tabBatch').classList.toggle('on', m==='batch');
+  files=[]; renderFiles();
+  document.getElementById('audioBtn').textContent = m==='single'?'Choose audio…':'Choose input folder…';
+  document.getElementById('go').textContent = m==='single'?'Create video':'Create videos';
+}
+async function api(path, body){
+  const r = await fetch(path,{method:body?'POST':'GET',headers:{'Content-Type':'application/json','X-Tools-Core-Token':serverToken},body:body?JSON.stringify(body):undefined});
+  if(!r.ok) throw new Error((await r.json().catch(()=>null))?.error||`Request failed (${r.status})`);
+  return r.json();
+}
+async function pickAudio(){
+  const {paths} = await api('/api/pick',{kind: mode==='single'?'audio':'audioFolder'});
+  if(paths.length){ files=paths; renderFiles(); }
+  else if(mode==='batch') alert('No audio files found in that folder (.wav, .mp3, .m4a, .flac, .aiff, .ogg).');
+}
+async function pickCover(){
+  const {paths} = await api('/api/pick',{kind:'image'});
+  if(paths.length){ cover=paths[0]; document.getElementById('coverPath').textContent=cover; }
+}
+async function pickOut(){
+  const {paths} = await api('/api/pick',{kind:'folder'});
+  if(paths.length){ outDir=paths[0]; document.getElementById('outPath').textContent=outDir; }
+}
+let lyricsFile='';
+async function pickLyrics(){
+  const {paths} = await api('/api/pick',{kind:'lyrics'});
+  if(paths.length){ lyricsFile=paths[0]; document.getElementById('lyricsPath').textContent=lyricsFile; }
+}
+function renderFiles(){
+  document.getElementById('audioPath').textContent =
+    files.length===0?'nothing selected': files.length===1?files[0]:files.length+' files queued';
+  const list=document.getElementById('fileList');
+  list.replaceChildren();
+  if(files.length>1) files.forEach((f,i)=>{
+    if(i) list.append(document.createElement('br'));
+    list.append(document.createTextNode(`${i+1}. ${f.split('/').pop()}`));
+  });
+}
+
+/* ---------- live preview ---------- */
+const SIZE_MODES=['big','default','dense'];
+const SPACE_MODES=['tight','normal','wide'];
+const SPACE_F={tight:.95,normal:1.25,wide:1.6};
+// preview scale: canvas is 880 wide vs 1920 video → ~0.458
+const SC=880/1920;
+const PV={ big:{a:108,i:80,act:['Never','gonna'],next:'give you up'},
+           default:{a:72,i:54,act:['Never','gonna','give','you','up'],next:'never gonna let you down'},
+           dense:{a:54,i:42,act:['Never','gonna','give','you','up,','never','gonna'],next:'let you down, never gonna run around'} };
+let hi=0;
+function fontFamily(){
+  const sel=document.getElementById('font').value;
+  const f= sel==='__custom' ? (document.getElementById('fontCustom').value||'Arial Black') : sel;
+  return `"${f}","Helvetica Neue",sans-serif`;
+}
+function sizeMode(){ return SIZE_MODES[+document.getElementById('sizeSlider').value]; }
+function spaceMode(){ return SPACE_MODES[+document.getElementById('spaceSlider').value]; }
+function drawPreview(){
+  const cv=document.getElementById('preview'), x=cv.getContext('2d');
+  const acc=document.getElementById('cAccent').value,
+        act=document.getElementById('cActive').value,
+        ina=document.getElementById('cInactive').value;
+  const m=PV[sizeMode()], fam=fontFamily();
+  const aPx=m.a*SC*1.35, iPx=m.i*SC*1.35;           // slight boost so preview reads well
+  const gap=m.a*SPACE_F[spaceMode()]*SC*1.35;
+  const yIna=cv.height-42, yAct=yIna-gap;
+  x.clearRect(0,0,cv.width,cv.height);
+  const g=x.createLinearGradient(0,0,0,cv.height);
+  g.addColorStop(0,'#2b2331');g.addColorStop(1,'#151019');
+  x.fillStyle=g;x.fillRect(0,0,cv.width,cv.height);
+  x.textAlign='center';x.textBaseline='middle';x.lineJoin='round';
+  x.font=`800 ${aPx}px ${fam}`;
+  const widths=m.act.map(w=>x.measureText(w+' ').width);
+  const total=widths.reduce((a,b)=>a+b,0);
+  let px=cv.width/2-total/2;
+  m.act.forEach((w,i)=>{
+    const cx=px+widths[i]/2; px+=widths[i];
+    x.strokeStyle='#000';x.lineWidth=aPx/5;x.strokeText(w,cx,yAct);
+    x.fillStyle=(i===hi%m.act.length)?acc:act;x.fillText(w,cx,yAct);
+  });
+  x.font=`700 ${iPx}px ${fam}`;
+  x.strokeStyle='#000';x.lineWidth=iPx/5;x.strokeText(m.next,cv.width/2,yIna);
+  x.fillStyle=ina;x.fillText(m.next,cv.width/2,yIna);
+}
+setInterval(()=>{hi++;drawPreview();},600);
+['cAccent','cActive','cInactive','font','fontCustom','sizeSlider','spaceSlider']
+  .forEach(id=>document.getElementById(id).addEventListener('input',drawPreview));
+document.getElementById('font').addEventListener('change',()=>{
+  document.getElementById('fontCustom').style.display =
+    document.getElementById('font').value==='__custom'?'block':'none';
+  drawPreview();
+});
+document.getElementById('smartSize').addEventListener('change',e=>{
+  document.getElementById('sizeSlider').disabled=e.target.checked;
+  document.getElementById('sizeLbl').textContent=e.target.checked?'(Smart decides per track)':'';
+});
+drawPreview();
+
+/* ---------- job control ---------- */
+let jobId=null, poll=null;
+async function start(){
+  if(!files.length){alert('Choose an audio file first.');return;}
+  if(!cover){alert('Choose cover art first.');return;}
+  const body={
+    files, cover, outputDir:outDir||null, lyricsFile:lyricsFile||null,
+    accent:document.getElementById('cAccent').value,
+    active:document.getElementById('cActive').value,
+    inactive:document.getElementById('cInactive').value,
+    font:(document.getElementById('font').value==='__custom'
+          ? document.getElementById('fontCustom').value||'Arial Black'
+          : document.getElementById('font').value),
+    sizeMode:sizeMode(),
+    smartSize:document.getElementById('smartSize').checked,
+    spacing:spaceMode(),
+    lineGap:+document.getElementById('lineGap').value,
+    mwCmd:document.getElementById('mwCmd').value,
+    reuseJson:document.getElementById('reuseJson').checked,
+  };
+  const r=await api('/api/start',body);
+  if(r.error){alert(r.error);return;}
+  jobId=r.jobId;
+  document.getElementById('go').disabled=true;
+  document.getElementById('bar').style.display='block';
+  document.getElementById('log').style.display='block';
+  poll=setInterval(update,700);
+}
+async function update(){
+  const j=await api('/api/status/'+jobId);
+  if(j.error)return;
+  const pct=Math.round((j.progress||0)*100);
+  document.getElementById('fill').style.width=pct+'%';
+  const stages={queued:'Queued…',transcribing:'Transcribing (MacWhisper)…',styling:'Styling lyrics…',rendering:'Rendering video…',finished:''};
+  let s=stages[j.stage]??'';
+  if(j.items&&j.items.length>1&&j.stage!=='finished')
+    s=`File ${j.itemIndex+1}/${j.items.length}: ${j.current} — ${s}`;
+  else if(j.current&&j.stage!=='finished') s=`${j.current} — ${s} ${pct}%`;
+  document.getElementById('stage').textContent=s;
+  document.getElementById('log').textContent=(j.log||[]).join('\n');
+  const lg=document.getElementById('log');lg.scrollTop=lg.scrollHeight;
+  if(j.stage==='finished'){
+    clearInterval(poll);
+    document.getElementById('go').disabled=false;
+    const st=document.getElementById('stage');
+    if(j.status==='done'){
+      st.innerHTML='<span class="ok">✓ '+j.results.length+' video'+(j.results.length>1?'s':'')+' created</span>';
+      if(j.results[0]) api('/api/reveal',{path:j.results[0]});
+    } else {
+      st.innerHTML='<span class="err">Finished with errors — see log</span>';
+    }
+  }
+}
+api('/api/defaults').then(d=>{document.getElementById('mwCmd').value=d.mwCmd;});
+</script>
+</body>
+</html>
