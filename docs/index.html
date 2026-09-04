@@ -1,0 +1,515 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="The public workshop of snepssen: Gateway Forge, Voice Forge, and tools for audio, speech, media, and careful local-first software.">
+  <meta name="theme-color" content="#171713">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://snepssen.github.io; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta property="og:title" content="snepssen — software for voices, signals, and strange maps">
+  <meta property="og:description" content="Local-first tools built to expose the interesting machinery instead of hiding it.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://snepssen.github.io/tools-core/">
+  <title>snepssen — voices, signals, and strange maps</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --ground: #171713;
+      --paper: #efeddf;
+      --paper-2: #dedac7;
+      --ink: #1a1a16;
+      --chalk: #f4f1e5;
+      --muted: #9d9a89;
+      --line: #3a3a31;
+      --signal: #71e5d2;
+      --voice: #ffbc52;
+      --gateway: #b69aff;
+      --tools: #ff765f;
+      --max: 1180px;
+      --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --serif: Iowan Old Style, Baskerville, "Times New Roman", serif;
+      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      background: var(--ground);
+      color: var(--chalk);
+      font: 400 17px/1.58 var(--sans);
+      -webkit-font-smoothing: antialiased;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: .28;
+      background-image:
+        linear-gradient(rgba(255,255,255,.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.035) 1px, transparent 1px);
+      background-size: 32px 32px;
+      mask-image: linear-gradient(to bottom, #000, transparent 70%);
+    }
+    a { color: inherit; }
+    a:focus-visible, button:focus-visible { outline: 3px solid var(--signal); outline-offset: 4px; }
+    img { display: block; max-width: 100%; }
+    .wrap { width: min(var(--max), calc(100% - 40px)); margin-inline: auto; }
+    .mono { font-family: var(--mono); }
+    .eyebrow {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font: 700 11px/1 var(--mono);
+      letter-spacing: .16em;
+      text-transform: uppercase;
+    }
+    .eyebrow::before { content: "[ "; color: var(--signal); }
+    .eyebrow::after { content: " ]"; color: var(--signal); }
+
+    .site-nav {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      border-bottom: 1px solid var(--line);
+      background: rgba(23,23,19,.88);
+      backdrop-filter: blur(14px);
+    }
+    .nav-inner { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .wordmark { text-decoration: none; font: 700 14px/1 var(--mono); letter-spacing: -.02em; }
+    .wordmark span { color: var(--signal); }
+    .nav-links { display: flex; align-items: center; gap: 24px; margin: 0; padding: 0; list-style: none; }
+    .nav-links a { color: var(--muted); text-decoration: none; font: 650 12px/1 var(--sans); }
+    .nav-links a:hover { color: var(--chalk); }
+
+    .hero { min-height: 77vh; display: grid; align-items: center; padding: 88px 0 72px; border-bottom: 1px solid var(--line); }
+    .hero-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: clamp(40px, 8vw, 110px); align-items: end; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 {
+      max-width: 880px;
+      margin-bottom: 28px;
+      font: 500 clamp(58px, 9.2vw, 118px)/.9 var(--serif);
+      letter-spacing: -.055em;
+      text-wrap: balance;
+    }
+    h1 em { color: var(--signal); font-weight: 400; }
+    .intro { max-width: 650px; margin: 0; color: #c8c5b7; font-size: clamp(18px, 2vw, 22px); }
+    .hero-note { border-top: 1px solid var(--line); padding-top: 20px; color: var(--muted); font: 13px/1.65 var(--mono); }
+    .hero-note strong { display: block; margin-bottom: 8px; color: var(--chalk); font-weight: 600; }
+    .signal-line { display: flex; gap: 5px; align-items: flex-end; height: 38px; margin-top: 26px; }
+    .signal-line i { display: block; width: 5px; background: var(--signal); animation: pulse 1.9s ease-in-out infinite alternate; }
+    .signal-line i:nth-child(1) { height: 14px; animation-delay: -.3s; }
+    .signal-line i:nth-child(2) { height: 31px; animation-delay: -.9s; }
+    .signal-line i:nth-child(3) { height: 20px; animation-delay: -.5s; }
+    .signal-line i:nth-child(4) { height: 36px; animation-delay: -1.4s; }
+    .signal-line i:nth-child(5) { height: 9px; animation-delay: -.1s; }
+    @keyframes pulse { to { transform: scaleY(.35); opacity: .5; } }
+
+    section { padding: 86px 0; border-bottom: 1px solid var(--line); scroll-margin-top: 54px; }
+    .section-head { display: grid; grid-template-columns: 1fr 1fr; gap: 36px; align-items: end; margin-bottom: 34px; }
+    h2 { margin-bottom: 0; font: 500 clamp(38px, 5vw, 66px)/1 var(--serif); letter-spacing: -.035em; }
+    .section-copy { max-width: 560px; margin: 0; color: var(--muted); }
+
+    .projects { display: grid; gap: 22px; }
+    .project {
+      --accent: var(--signal);
+      display: grid;
+      grid-template-columns: minmax(0, .9fr) minmax(320px, 1.1fr);
+      overflow: hidden;
+      min-height: 430px;
+      border: 1px solid var(--line);
+      background: #1d1d18;
+    }
+    .project-copy { display: flex; flex-direction: column; align-items: flex-start; padding: clamp(28px, 5vw, 54px); }
+    .project-no { color: var(--accent); font: 12px/1 var(--mono); }
+    .project h3 { margin: auto 0 15px; font: 650 clamp(32px, 4vw, 50px)/1 var(--sans); letter-spacing: -.045em; }
+    .project p { max-width: 46ch; color: #b8b5a8; }
+    .project-meta { margin-top: 10px; color: var(--muted); font: 12px/1.6 var(--mono); }
+    .project-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-height: 44px;
+      padding: 0 16px;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: #12120f;
+      text-decoration: none;
+      font: 750 13px/1 var(--sans);
+    }
+    .button::after { content: "↗"; font-size: 16px; }
+    .button.ghost { background: transparent; color: var(--accent); }
+    .project-media { position: relative; min-height: 330px; overflow: hidden; background: #0e0e0c; }
+    .project-media img { width: 100%; height: 100%; object-fit: cover; object-position: left top; opacity: .82; transition: opacity .2s ease, transform .5s ease; }
+    .project:hover .project-media img { opacity: 1; transform: scale(1.012); }
+    .project-media::after { content: ""; position: absolute; inset: 0; box-shadow: inset 0 0 0 1px rgba(255,255,255,.04); pointer-events: none; }
+    .project.gateway { --accent: var(--gateway); }
+    .project.voice { --accent: var(--voice); }
+    .project.tools { --accent: var(--tools); }
+    .tools-plate { height: 100%; display: grid; place-items: center; padding: 36px; background: #12120f; }
+    .tool-tree { width: min(100%, 520px); font: 13px/1.9 var(--mono); color: #a9a596; }
+    .tool-tree b { color: var(--tools); font-weight: 500; }
+    .tool-tree strong { color: var(--chalk); font-weight: 500; }
+
+    .quickstart {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 18px;
+      margin: 0 0 24px;
+      padding: 18px 20px;
+      border: 1px solid var(--line);
+      background: #10100e;
+    }
+    .quickstart code { overflow-x: auto; color: #c8c5b7; font: 13px/1.7 var(--mono); white-space: nowrap; }
+    .copy {
+      min-height: 36px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font: 700 11px/1 var(--mono);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+    .copy:hover { border-color: var(--signal); color: var(--signal); }
+    .copy[data-state="done"] { border-color: var(--signal); color: var(--signal); }
+    .filters { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; }
+    .filter {
+      min-height: 38px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--muted);
+      cursor: pointer;
+      font: 650 12px/1 var(--sans);
+    }
+    .filter:hover, .filter[aria-pressed="true"] { border-color: var(--tools); color: var(--chalk); background: rgba(255,118,95,.08); }
+    .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+    .tool-card { min-width: 0; padding: 28px; background: #1d1d18; }
+    .tool-card[hidden] { display: none; }
+    .tool-card .tag { color: var(--tools); font: 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .1em; }
+    .tool-card h3 { margin: 38px 0 10px; font: 700 23px/1.1 var(--sans); letter-spacing: -.025em; }
+    .tool-card p { min-height: 76px; margin-bottom: 20px; color: var(--muted); font-size: 14px; }
+    .tool-card .command { position: relative; padding: 15px 48px 15px 15px; background: #11110e; color: #d5d2c5; overflow-x: auto; font: 12px/1.55 var(--mono); white-space: nowrap; }
+    .tool-card .command .copy { position: absolute; top: 8px; right: 8px; min-height: 30px; padding-inline: 9px; }
+    .tool-card .readme { display: inline-block; margin-top: 18px; color: var(--tools); font: 700 12px/1 var(--sans); text-underline-offset: 4px; }
+
+    .labs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+    .lab { display: flex; flex-direction: column; min-height: 440px; padding: clamp(24px, 4vw, 38px); border: 1px solid var(--line); background: #1d1d18; }
+    .lab h3 { margin: 6px 0 12px; font: 700 28px/1.05 var(--sans); letter-spacing: -.035em; }
+    .lab p { color: var(--muted); font-size: 14px; }
+    .lab-controls { display: flex; flex-wrap: wrap; gap: 9px; margin: 16px 0; }
+    .lab button {
+      min-height: 42px;
+      padding: 0 14px;
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--chalk);
+      cursor: pointer;
+      font: 650 12px/1 var(--sans);
+    }
+    .lab button:hover, .lab button[aria-pressed="true"] { border-color: var(--signal); color: var(--signal); }
+    .lab button.primary { border-color: var(--signal); background: var(--signal); color: var(--ink); }
+    .lab button.primary[data-playing="true"] { border-color: var(--tools); background: var(--tools); }
+    #signalCanvas { width: 100%; height: 130px; margin-top: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .lab-status { min-height: 20px; color: var(--signal); font: 11px/1.6 var(--mono); }
+    .safety { color: #777467 !important; font-size: 11px !important; }
+    .lyric-stage { display: grid; place-items: center; flex: 1; min-height: 185px; margin: 10px 0 18px; padding: 24px; background: #11110e; text-align: center; }
+    .lyric-line { max-width: 520px; color: #8d8a7d; font: 500 clamp(22px, 3vw, 35px)/1.35 var(--serif); }
+    .lyric-line span { padding: 0 .08em; transition: color .12s ease, background .12s ease; }
+    .lyric-line span.active { color: var(--ink); background: var(--voice); }
+    .beat-readout { color: var(--muted); font: 11px/1.5 var(--mono); }
+
+    .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid var(--line); background: var(--line); }
+    .principle { background: var(--paper); color: var(--ink); padding: 28px; }
+    .principle .n { color: #6c695d; font: 11px/1 var(--mono); }
+    .principle h3 { margin: 52px 0 10px; font: 700 22px/1.1 var(--sans); letter-spacing: -.025em; }
+    .principle p { margin: 0; color: #555248; font-size: 14px; }
+    .contact-panel { display: grid; grid-template-columns: 1.2fr .8fr; gap: 1px; border: 1px solid var(--line); background: var(--line); }
+    .contact-main, .contact-links { padding: clamp(28px, 5vw, 52px); background: #1d1d18; }
+    .contact-main h2 { max-width: 680px; }
+    .contact-main p { max-width: 560px; margin-top: 22px; color: var(--muted); }
+    .contact-links { display: flex; flex-direction: column; justify-content: center; gap: 1px; padding-block: 24px; }
+    .contact-links a { display: flex; justify-content: space-between; gap: 20px; padding: 18px 24px; border-bottom: 1px solid var(--line); text-decoration: none; font: 650 14px/1 var(--sans); }
+    .contact-links a:last-child { border-bottom: 0; }
+    .contact-links a span { color: var(--muted); font: 11px/1 var(--mono); }
+    .contact-links a:hover { color: var(--signal); }
+
+    footer { padding: 38px 0 64px; color: var(--muted); font: 12px/1.6 var(--mono); }
+    @media (max-width: 820px) {
+      .hero-grid, .section-head, .project, .contact-panel { grid-template-columns: 1fr; }
+      .hero { min-height: auto; }
+      .project-copy { min-height: 340px; }
+      .project-media { min-height: 280px; }
+      .tool-grid, .labs { grid-template-columns: 1fr; }
+      .principles { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 560px) {
+      html { scroll-behavior: auto; }
+      .wrap { width: min(100% - 28px, var(--max)); }
+      .nav-links li:nth-child(2) { display: none; }
+      .hero { padding-top: 66px; }
+      h1 { font-size: clamp(52px, 18vw, 82px); }
+      section { padding: 62px 0; }
+      .project-copy { min-height: 310px; padding: 26px; }
+      .quickstart { grid-template-columns: minmax(0, 1fr); }
+      .quickstart .copy { justify-self: start; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="site-nav" aria-label="Main navigation">
+    <div class="wrap nav-inner">
+      <a class="wordmark" href="#top"><span>~/</span>snepssen</a>
+      <ul class="nav-links">
+        <li><a href="#projects">Projects</a></li>
+        <li><a href="#tools">Tools</a></li>
+        <li><a href="#contact">Contact</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero" id="top">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">Independent software workshop</p>
+          <h1>Voices, signals &amp; <em>strange maps.</em></h1>
+          <p class="intro">I build local-first tools that put the interesting machinery on the outside—so it can be measured, questioned, and changed.</p>
+        </div>
+        <aside class="hero-note">
+          <strong>Currently forging</strong>
+          Native and cross-platform audio tools, one trained voice, a meditation cartography system, and the small utilities that made them possible.
+          <div class="signal-line" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+        </aside>
+      </div>
+    </header>
+
+    <section id="projects">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Three public projects</p>
+            <h2>The workbench</h2>
+          </div>
+          <p class="section-copy">Each project has its own repository and field notes. The apps stay local; the measurements, trade-offs, and failures are left visible.</p>
+        </div>
+
+        <div class="projects">
+          <article class="project gateway">
+            <div class="project-copy">
+              <span class="project-no">01 / CARTOGRAPHY</span>
+              <h3>Gateway Forge</h3>
+              <p>A guided-meditation assembly system and journal that keeps the published map beside what was actually found—without forcing them into one answer.</p>
+              <div class="project-meta">Swift · SwiftUI · macOS + iOS companion · GPL-3.0-or-later</div>
+              <div class="project-actions">
+                <a class="button" href="https://snepssen.github.io/gateway-forge/">Visit project</a>
+                <a class="button ghost" href="https://github.com/snepssen/gateway-forge">GitHub</a>
+              </div>
+            </div>
+            <div class="project-media">
+              <img src="https://snepssen.github.io/gateway-forge/img/home.png" alt="Gateway Forge desktop home screen with its Focus-level map" loading="lazy">
+            </div>
+          </article>
+
+          <article class="project voice">
+            <div class="project-copy">
+              <span class="project-no">02 / SPEECH</span>
+              <h3>Voice Forge</h3>
+              <p>A text-to-speech instrument with the synthesiser’s timing controls exposed and measured instead of hidden behind one generic speed slider.</p>
+              <div class="project-meta">Swift + Electron · macOS, Linux, Windows · GPL-3.0-or-later</div>
+              <div class="project-actions">
+                <a class="button" href="https://snepssen.github.io/voice-forge/">Visit project</a>
+                <a class="button ghost" href="https://github.com/snepssen/voice-forge">GitHub</a>
+              </div>
+            </div>
+            <div class="project-media">
+              <img src="https://snepssen.github.io/voice-forge/img/voice-forge.png" alt="Voice Forge native macOS interface with speech and timing controls" loading="lazy">
+            </div>
+          </article>
+
+          <article class="project tools">
+            <div class="project-copy">
+              <span class="project-no">03 / FIELD TOOLS</span>
+              <h3>tools-core</h3>
+              <p>The useful pieces that fell out of the larger work: lyric-video production, audio forensics, corpus preparation, Piper workflows, and Qwen3-TTS truth probes.</p>
+              <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
+              <div class="project-actions">
+                <a class="button" href="#tools">Open the toolbox</a>
+                <a class="button ghost" href="https://github.com/snepssen/tools-core">GitHub</a>
+              </div>
+            </div>
+            <div class="project-media tools-plate" aria-label="tools-core directory map">
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── <b>lyric-video-maker/</b><br>├── audio-analysis/<br>├── gateway-authoring/<br>├── piper-workflows/<br>└── tts-research/</div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="tools">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">tools-core</p>
+            <h2>Open the toolbox</h2>
+          </div>
+          <p class="section-copy">These are working instruments, not a framework. Take the one that answers your question, give it explicit paths, and keep the generated material out of Git.</p>
+        </div>
+
+        <div class="quickstart">
+          <code>git clone https://github.com/snepssen/tools-core.git &amp;&amp; cd tools-core</code>
+          <button class="copy" type="button" data-copy="git clone https://github.com/snepssen/tools-core.git &amp;&amp; cd tools-core">Copy</button>
+        </div>
+
+        <div class="filters" role="group" aria-label="Filter tools">
+          <button class="filter" type="button" data-filter="all" aria-pressed="true">Everything</button>
+          <button class="filter" type="button" data-filter="media" aria-pressed="false">Media</button>
+          <button class="filter" type="button" data-filter="audio" aria-pressed="false">Audio</button>
+          <button class="filter" type="button" data-filter="speech" aria-pressed="false">Speech</button>
+          <button class="filter" type="button" data-filter="gateway" aria-pressed="false">Gateway</button>
+        </div>
+
+        <div class="tool-grid" aria-live="polite">
+          <article class="tool-card" data-kind="media">
+            <span class="tag">Media / macOS UI</span>
+            <h3>Lyric Video Maker</h3>
+            <p>Align corrected lyrics to MacWhisper timing, style karaoke subtitles, and burn a cover-led 1080p video with ffmpeg.</p>
+            <div class="command"><code>python3 lyric-video-maker/app.py</code><button class="copy" type="button" data-copy="python3 lyric-video-maker/app.py" aria-label="Copy Lyric Video Maker command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/lyric-video-maker">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="audio">
+            <span class="tag">Audio / measurement</span>
+            <h3>Beat analyser</h3>
+            <p>Find persistent stereo tone pairs, calculate their differential, and separate likely entrainment signals from drifting content.</p>
+            <div class="command"><code>python3 audio-analysis/analyse-beat.py track.flac --json</code><button class="copy" type="button" data-copy="python3 audio-analysis/analyse-beat.py track.flac --json" aria-label="Copy beat analyser command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/audio-analysis">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="audio speech">
+            <span class="tag">Speech / corpus</span>
+            <h3>Corpus aligner</h3>
+            <p>Use authored text as truth, ASR only for timing, and quiet gaps for safe cuts—then preserve a manifest of every decision.</p>
+            <div class="command"><code>python3 audio-analysis/align-corpus.py read.wav words.json script.md output</code><button class="copy" type="button" data-copy="python3 audio-analysis/align-corpus.py read.wav words.json script.md output" aria-label="Copy corpus aligner command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/audio-analysis">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="speech">
+            <span class="tag">Speech / Piper</span>
+            <h3>Piper workflows</h3>
+            <p>Train, resume, export, render, and A/B checkpoints while retaining fixes for checkpoint loading, dynamic shapes, and telemetry.</p>
+            <div class="command"><code>bash piper-workflows/check-in.sh RUN CONFIG OUT</code><button class="copy" type="button" data-copy="bash piper-workflows/check-in.sh RUN CONFIG OUT" aria-label="Copy Piper check-in command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/piper-workflows">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="speech">
+            <span class="tag">Speech / Qwen3-TTS</span>
+            <h3>Truth probes</h3>
+            <p>Dump real MLX tensors, tokenizer slices, and speaking pace so a native port can be compared stage by stage instead of trusted by ear.</p>
+            <div class="command"><code>python3 tts-research/qwen3-tokenizer-truth.py --gateway-root PATH</code><button class="copy" type="button" data-copy="python3 tts-research/qwen3-tokenizer-truth.py --gateway-root PATH" aria-label="Copy tokenizer truth command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/tts-research">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="gateway">
+            <span class="tag">Gateway / authoring</span>
+            <h3>Library helpers</h3>
+            <p>Index evidence, convert measured signals into playable profiles, verify corpus labels, and safely preview provisional briefings.</p>
+            <div class="command"><code>python3 gateway-authoring/seed-briefings.py PATH --dry-run</code><button class="copy" type="button" data-copy="python3 gateway-authoring/seed-briefings.py PATH --dry-run" aria-label="Copy briefing preview command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/gateway-authoring">Instructions ↗</a>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="samples">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">Small live specimens</p>
+            <h2>Try the ideas</h2>
+          </div>
+          <p class="section-copy">Two deliberately tiny sketches from the larger projects. Nothing is uploaded and nothing follows you away from this page.</p>
+        </div>
+
+        <div class="labs">
+          <article class="lab">
+            <span class="project-no mono">A / DIFFERENTIAL</span>
+            <h3>Two tones, one perceived beat</h3>
+            <p>Pick a differential, put on headphones, then start the quiet signal. The left and right channels differ by the selected amount.</p>
+            <div class="lab-controls" role="group" aria-label="Select beat differential">
+              <button type="button" data-beat="4" aria-pressed="true">4.0 Hz</button>
+              <button type="button" data-beat="1.5" aria-pressed="false">1.5 Hz</button>
+              <button type="button" data-beat="0.37" aria-pressed="false">0.37 Hz</button>
+            </div>
+            <div class="lab-controls">
+              <button class="primary" id="signalToggle" type="button" data-playing="false">Start quiet signal</button>
+            </div>
+            <div class="lab-status" id="signalStatus" aria-live="polite">ready · carrier 100 Hz · differential 4.0 Hz</div>
+            <canvas id="signalCanvas" aria-label="Animated diagram of the left and right tone relationship"></canvas>
+            <p class="safety">Headphones required to perceive the differential. Starts very quietly, stops automatically after 30 seconds, and stops when the page is hidden.</p>
+          </article>
+
+          <article class="lab">
+            <span class="project-no mono">B / TIMING</span>
+            <h3>A lyric line is a clock</h3>
+            <p>Play the timing sketch. The words are fixed; only their measured windows decide what is active.</p>
+            <div class="lyric-stage">
+              <div class="lyric-line" id="lyricLine" aria-live="off">
+                <span>Build</span> <span>a</span> <span>little</span> <span>signal,</span><br>
+                <span>then</span> <span>give</span> <span>it</span> <span>room</span> <span>to</span> <span>breathe.</span>
+              </div>
+            </div>
+            <div class="lab-controls">
+              <button class="primary" id="lyricToggle" type="button" data-playing="false">Play word timing</button>
+            </div>
+            <div class="beat-readout" id="lyricStatus" aria-live="polite">00:00.000 / 00:05.200</div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="approach">
+      <div class="wrap">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">A recurring method</p>
+            <h2>How I build</h2>
+          </div>
+          <p class="section-copy">The subjects change. The rules underneath them have stayed remarkably consistent.</p>
+        </div>
+        <div class="principles">
+          <article class="principle"><span class="n">01</span><h3>Keep it local</h3><p>Personal voice, private journals, and unfinished material stay on the machine unless there is a clear reason for them to leave.</p></article>
+          <article class="principle"><span class="n">02</span><h3>Measure the claim</h3><p>A waveform, duration, tensor, or failing check is more useful than “sounds about right.” Unknown stays a named state.</p></article>
+          <article class="principle"><span class="n">03</span><h3>Show the mechanism</h3><p>Good tools expose the meaningful controls and preserve the source material, instead of hiding both behind a convenient button.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact">
+      <div class="wrap">
+        <div class="contact-panel">
+          <div class="contact-main">
+            <p class="eyebrow">Contact</p>
+            <h2>Questions, odd measurements, useful disagreements.</h2>
+            <p>Bug reports belong in the project that produced them. For everything else, email or Telegram reaches me directly.</p>
+          </div>
+          <div class="contact-links">
+            <a href="https://github.com/snepssen">GitHub <span>@snepssen ↗</span></a>
+            <a href="https://t.me/snepssen">Telegram <span>@snepssen ↗</span></a>
+            <a href="mailto:snepssen@proton.me">Email <span>snepssen@proton.me ↗</span></a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer><div class="wrap">Built as plain HTML · no analytics · no trackers · source on <a href="https://github.com/snepssen/tools-core">GitHub</a></div></footer>
+  <script src="site.js"></script>
+</body>
+</html>

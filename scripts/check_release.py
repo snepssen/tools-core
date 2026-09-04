@@ -7,6 +7,7 @@ import compileall
 import os
 from pathlib import Path
 import re
+import shutil
 import subprocess
 import sys
 import unittest
@@ -77,13 +78,27 @@ def shell_audit() -> list[str]:
     return failures
 
 
+def javascript_audit() -> list[str]:
+    node = shutil.which("node")
+    if not node:
+        print("note: node not found; JavaScript syntax check skipped")
+        return []
+    failures = []
+    for path in files():
+        if path.suffix == ".js":
+            result = subprocess.run([node, "--check", str(path)], capture_output=True, text=True)
+            if result.returncode:
+                failures.append(f"{path.relative_to(ROOT)}: {result.stderr.strip()}")
+    return failures
+
+
 def tests_pass() -> bool:
     suite = unittest.defaultTestLoader.discover(str(ROOT / "tests"))
     return unittest.TextTestRunner(verbosity=1).run(suite).wasSuccessful()
 
 
 def main() -> int:
-    failures = source_audit() + shell_audit()
+    failures = source_audit() + shell_audit() + javascript_audit()
     if not compileall.compile_dir(ROOT, quiet=1):
         failures.append("one or more Python files did not compile")
     if not tests_pass():

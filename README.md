@@ -3,6 +3,9 @@
 Small, local-first utilities for media production, audio inspection, voice
 training research, and Gateway Forge authoring.
 
+**[Open the project page →](https://snepssen.github.io/tools-core/)** — project
+index, usage examples, contact details, and small interactive samples.
+
 This repository contains source code only. It deliberately excludes recordings,
 lyrics, transcripts, model weights, checkpoints, generated media, caches, and
 third-party source trees.
