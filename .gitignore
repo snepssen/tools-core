@@ -46,3 +46,12 @@ manifest.tsv
 beat-analysis/
 groundtruth/
 tensors/
+
+# Voice training corpus lives outside the repo entirely, at
+# ~/Claude/voice-training-data/. These entries are a second line of
+# defense in case any of it is ever copied or symlinked back in.
+voice-corpus/
+voice-corpus-rode/
+Voice-beta-rode/
+from-deck/
+media/
