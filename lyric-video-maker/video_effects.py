@@ -40,6 +40,7 @@ def build_filter_graph(profile, subtitle_path, settings, bpm=None):
     width, height = int(profile["width"]), int(profile["height"])
     mode = settings.get("visualMode", "ambient")
     waveform = settings.get("waveform", "bottom")
+    extreme = bool(settings.get("extremeMode")) and mode == "party"
     if mode not in VISUAL_MODES:
         mode = "ambient"
     if waveform not in WAVEFORM_MODES:
@@ -58,43 +59,81 @@ def build_filter_graph(profile, subtitle_path, settings, bpm=None):
         ])
     elif mode == "party":
         tempo = max(40.0, min(float(bpm or 120.0), 240.0))
-        video.extend([
-            "zoompan="
-            "z='1.055+0.018*sin(on/16)':"
-            "x='iw/2-(iw/zoom/2)+sin(on/13)*10':"
-            "y='ih/2-(ih/zoom/2)+cos(on/17)*10':"
-            f"d=1:s={width}x{height}:fps=60",
-            f"hue=h='mod(floor(t*{tempo:.3f}/60)*57,360)':s=1.34",
-            _edge_glow(settings.get("accent"), 1.28),
-        ])
+        if extreme:
+            beat_phase = f"2*PI*on*{tempo:.3f}/3600"
+            video.extend([
+                "zoompan="
+                f"z='1.085+0.032*sin({beat_phase})':"
+                f"x='iw/2-(iw/zoom/2)+sin({beat_phase}*1.5)*18':"
+                f"y='ih/2-(ih/zoom/2)+cos({beat_phase}*1.25)*18':"
+                f"d=1:s={width}x{height}:fps=60",
+                f"hue=h='mod(floor(t*{tempo:.3f}/30)*83,360)':s=1.78",
+                "rgbashift=rh=9:rv=-4:bh=-9:bv=4:edge=wrap",
+                f"eq=brightness='if(lt(mod(t,30/{tempo:.3f}),0.055),"
+                "0.20,-0.035)':contrast=1.16:saturation=1.45:eval=frame",
+                _edge_glow(settings.get("accent"), 1.72),
+            ])
+        else:
+            video.extend([
+                "zoompan="
+                "z='1.055+0.018*sin(on/16)':"
+                "x='iw/2-(iw/zoom/2)+sin(on/13)*10':"
+                "y='ih/2-(ih/zoom/2)+cos(on/17)*10':"
+                f"d=1:s={width}x{height}:fps=60",
+                f"hue=h='mod(floor(t*{tempo:.3f}/60)*57,360)':s=1.34",
+                _edge_glow(settings.get("accent"), 1.28),
+            ])
 
     graph = [f"[0:v]{','.join(video)}[base]"]
     visual_input = "base"
     audio_map = "1:a:0"
     if waveform != "off":
         colour = _hex(settings.get("accent"))
-        graph.append("[1:a]asplit=2[audioout][wavesource]")
+        if extreme:
+            graph.append(
+                "[1:a]asplit=3[audioout][wavesource][shadersource]")
+        else:
+            graph.append("[1:a]asplit=2[audioout][wavesource]")
         audio_map = "[audioout]"
+        visual_base = "base"
+        if extreme:
+            graph.append(
+                f"[shadersource]showspectrum=s=320x180:slide=scroll:"
+                "mode=combined:color=rainbow:scale=cbrt:fscale=log:"
+                "saturation=2:gain=3:fps=30,tmix=frames=8,"
+                "gblur=sigma=5,"
+                f"scale={width}:{height}:flags=fast_bilinear,"
+                "format=yuv420p[shader]")
+            graph.append(
+                "[base][shader]blend=all_mode=screen:"
+                "all_opacity=0.34[reactive]")
+            visual_base = "reactive"
         if waveform == "bottom":
             wave_height = max(72, round(height * .085))
             margin = max(28, round(height * .035))
             graph.append(
                 f"[wavesource]showfreqs=s={width}x{wave_height}:mode=bar:"
                 f"r=30:colors=0x{colour}@0.62:ascale=sqrt:fscale=log:"
-                "averaging=4,format=rgba,"
+                "averaging=4"
+                + (",hue=h='t*180':s=2.2,tmix=frames=3" if extreme else "")
+                + ",format=rgba,"
                 "colorkey=0x000000:0.12:0.08[wave]")
             graph.append(
-                f"[base][wave]overlay=0:H-h-{margin}:format=auto[decorated]")
+                f"[{visual_base}][wave]overlay=0:H-h-{margin}:"
+                "format=auto[decorated]")
         else:
             wave_width = max(78, round(width * .07))
             margin = max(24, round(width * .025))
             graph.append(
                 f"[wavesource]showfreqs=s={height}x{wave_width}:mode=bar:"
                 f"r=30:colors=0x{colour}@0.60:ascale=sqrt:fscale=log:"
-                "averaging=4,format=rgba,"
+                "averaging=4"
+                + (",hue=h='t*180':s=2.2,tmix=frames=3" if extreme else "")
+                + ",format=rgba,"
                 "colorkey=0x000000:0.12:0.08,transpose=1[wave]")
             graph.append(
-                f"[base][wave]overlay=W-w-{margin}:0:format=auto[decorated]")
+                f"[{visual_base}][wave]overlay=W-w-{margin}:0:"
+                "format=auto[decorated]")
         visual_input = "decorated"
 
     graph.append(f"[{visual_input}]subtitles='{subtitle_path}'[video]")

@@ -156,6 +156,25 @@ class VideoEffectsTests(unittest.TestCase):
         self.assertIn("showfreqs=s=1920x", graph)
         self.assertIn("transpose=1", graph)
 
+    def test_extreme_party_adds_strobe_and_audio_reactive_shader(self):
+        graph, audio_map = video_effects.build_filter_graph(
+            video_formats.VIDEO_FORMATS["landscape"], "words.ass",
+            {"visualMode": "party", "extremeMode": True,
+             "waveform": "bottom", "accent": "#FFD400"}, bpm=140,
+        )
+        self.assertIn("rgbashift=", graph)
+        self.assertIn("if(lt(mod(t,30/140.000),0.055)", graph)
+        self.assertIn("asplit=3", graph)
+        self.assertIn("showspectrum=", graph)
+        self.assertIn("all_mode=screen", graph)
+        self.assertEqual(audio_map, "[audioout]")
+
+    def test_ui_names_character_capacity_and_warns_about_strobe(self):
+        html = (TOOL / "index.html").read_text(encoding="utf-8")
+        self.assertIn("Characters per line", html)
+        self.assertIn("Extreme strobe · seizure risk", html)
+        self.assertIn("Photosensitivity warning required", html)
+
     def test_estimates_synthetic_120_bpm_pulse(self):
         sample_rate = 400
         samples = [0.0] * (sample_rate * 12)

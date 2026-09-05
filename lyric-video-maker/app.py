@@ -50,6 +50,7 @@ DEFAULTS = {
     "lyricPosition": "lower",  # lower | center
     "lineGap": 1.2,
     "visualMode": "ambient",  # still | ambient | party
+    "extremeMode": False,      # explicit photosensitive/strobe opt-in
     "waveform": "bottom",     # off | bottom | side
     "bpm": 0,                 # 0 estimates tempo for Party Hard
     "mwCmd": 'mw transcribe --persist "{input}"',
@@ -281,6 +282,9 @@ def render_video(job, audio, cover, ass_path, out_path, preset="medium",
     settings = settings or DEFAULTS
     bpm = None
     if settings.get("visualMode") == "party":
+        if settings.get("extremeMode"):
+            log(job, "WARNING: Extreme strobe enabled — output requires a "
+                     "photosensitivity warning")
         try:
             manual_bpm = float(settings.get("bpm") or 0)
         except (TypeError, ValueError):
@@ -603,7 +607,8 @@ class Handler(BaseHTTPRequestHandler):
             settings = {k: payload.get(k, DEFAULTS.get(k)) for k in
                         ("accent", "active", "inactive", "font", "sizeMode",
                          "smartSize", "spacing", "lineCount", "lyricPosition",
-                         "lineGap", "visualMode", "waveform", "bpm", "mwCmd",
+                         "lineGap", "visualMode", "extremeMode", "waveform",
+                         "bpm", "mwCmd",
                          "reuseJson", "outputDir", "lyricsFile", "format")}
             settings["cover"] = cover
             threading.Thread(target=worker, args=(job, settings),
@@ -643,7 +648,7 @@ def cli_render(args):
                      "format": args.format, "lineCount": args.lines,
                      "lyricPosition": args.lyric_position,
                      "visualMode": args.visual, "waveform": args.waveform,
-                     "bpm": args.bpm})
+                     "extremeMode": args.extreme, "bpm": args.bpm})
     if args.accent:
         settings["accent"] = args.accent
     if args.preset:
@@ -682,6 +687,8 @@ if __name__ == "__main__":
                     default=DEFAULTS["visualMode"])
     ap.add_argument("--waveform", choices=video_effects.WAVEFORM_MODES,
                     default=DEFAULTS["waveform"])
+    ap.add_argument("--extreme", action="store_true",
+                    help="enable rapid flashing and audio-reactive shaders")
     ap.add_argument("--bpm", type=float, default=DEFAULTS["bpm"],
                     help="Party Hard tempo; 0 estimates it from the audio")
     a = ap.parse_args()

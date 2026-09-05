@@ -44,7 +44,9 @@ Markdown decoration, and display-hostile punctuation are omitted. MacWhisper
 still supplies the word timing. Lyrics render in stable reading pages so fast
 phrases remain visible while the current word is highlighted. The UI controls
 whether each page contains one to five lines, places it in the lower third or
-centre, and previews the selected font, sizing, spacing, and colours.
+centre, and previews the selected font, character capacity, spacing, and
+colours. The character-capacity slider shows the actual wrapping limit for the
+selected landscape or portrait format rather than an abstract size name.
 Portrait renders use a conservative mobile-safe lyric position and add
 `-short` to the filename so they can sit beside the landscape render.
 
@@ -55,6 +57,13 @@ Portrait renders use a conservative mobile-safe lyric position and add
 - **Party Hard** adds stronger movement and jumps the colour treatment once per
   beat. Leave BPM empty to estimate it from the audio, or enter 40–240 BPM for
   deterministic timing.
+
+Party Hard also exposes an **Extreme strobe** switch. This deliberately adds
+rapid full-frame flashes, RGB channel separation, spectrum trails, faster
+colour jumps, and a scrolling audio-reactive wash across the artwork. It is
+off by default and carries an in-app photosensitivity warning because the
+result can trigger seizures. Any published output using it should include a
+prominent photosensitivity warning.
 
 The audio equaliser can be disabled or placed along the bottom or right edge.
 Its frequency bars are drawn from the real audio stream and remain behind the
@@ -82,7 +91,8 @@ python3 lyric-video-maker/app.py --render \
 
 Omit `--format portrait` (or pass `--format landscape`) for a 1920x1080 video.
 If no matching image sits beside the audio, pass `--cover cover.jpg`.
-For Party Hard, pass `--visual party`; optionally add `--bpm 128`.
+For Party Hard, pass `--visual party`; optionally add `--bpm 128`. Add
+`--extreme` only for the explicitly warned high-intensity treatment.
 
 Convert the simple MacWhisper word-list form to SRT with:
 
