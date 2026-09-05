@@ -25,9 +25,22 @@ python3 lyric-video-maker/app.py
 The app opens a token-protected page on `127.0.0.1`. The token changes every
 run; use the page opened by the app rather than typing the bare address.
 
-Select a single file or a folder, choose cover art, optionally select a lyric
-sheet and output folder, choose the output format, then create the video. A
-batch uses the same cover and processes supported audio files sequentially.
+Select a single file or a folder, optionally choose fallback cover art, a lyric
+sheet, and an output folder, choose the output format, then create the video.
+A batch searches the chosen folder recursively and processes supported audio
+files sequentially.
+
+For each audio track, the app automatically finds sibling artwork and lyrics
+with the same logical filename. Punctuation and case do not need to match, so
+`A04 Red Aura.wav` pairs with `A04 - Red Aura.png` and
+`A04 - Red Aura.md`. A manually selected cover or lyric sheet is used as a
+fallback/override.
+
+Suno-style Markdown is cleaned for display without modifying the source file:
+the title, bracketed arrangement directions, Suno style tags, negative tags,
+Markdown decoration, and display-hostile punctuation are omitted. MacWhisper
+still supplies the word timing. Lyrics render in stable five-line reading
+pages so fast phrases remain visible while the current word is highlighted.
 Portrait renders use a conservative mobile-safe lyric position and add
 `-short` to the filename so they can sit beside the landscape render.
 
@@ -46,11 +59,12 @@ Timed JSON is searched beside the audio as `<song>.words.json` and then
 
 ```sh
 python3 lyric-video-maker/app.py --render \
-  --audio song.wav --json song.words.json --cover cover.jpg \
+  --audio song.wav --json song.words.json \
   --format portrait --out song-short.mp4
 ```
 
 Omit `--format portrait` (or pass `--format landscape`) for a 1920x1080 video.
+If no matching image sits beside the audio, pass `--cover cover.jpg`.
 
 Convert the simple MacWhisper word-list form to SRT with:
 

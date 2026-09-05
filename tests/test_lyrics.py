@@ -60,6 +60,35 @@ class LyricsEngineTests(unittest.TestCase):
         self.assertIn("PlayResY: 1920", ass)
         self.assertIn(r"\pos(540,", ass)
 
+    def test_reading_page_keeps_up_to_five_lines_visible(self):
+        lines = []
+        for index, word in enumerate(("one", "two", "three", "four")):
+            start = index * 0.25
+            lines.append({
+                "start": start, "end": start + 0.25, "text": word,
+                "words": [{"text": word, "start": start,
+                           "end": start + 0.25}],
+            })
+        ass = lyrics_engine.build_ass(
+            lines,
+            {"accent": "#FFD400", "active": "#FFFFFF",
+             "inactive": "#8A99A8"},
+        )
+        first_window = [line for line in ass.splitlines()
+                        if ",0:00:00.00,0:00:00.25," in line]
+        self.assertEqual(len(first_window), 4)
+        self.assertTrue(any("one" in line for line in first_window))
+        self.assertTrue(any("two" in line for line in first_window))
+        self.assertTrue(any("three" in line for line in first_window))
+        self.assertTrue(any("four" in line for line in first_window))
+
+    def test_wrap_line_rebalances_a_short_orphan(self):
+        words = [{"text": word, "start": index, "end": index + 0.5}
+                 for index, word in enumerate(
+                     ("one", "two", "three", "four", "five", "six"))]
+        chunks = lyrics_engine.wrap_line(words, max_chars=100, max_words=5)
+        self.assertEqual([len(chunk) for chunk in chunks], [3, 3])
+
 
 class VideoFormatTests(unittest.TestCase):
     def test_portrait_output_does_not_overwrite_landscape(self):

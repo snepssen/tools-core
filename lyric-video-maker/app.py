@@ -31,6 +31,7 @@ from urllib.parse import parse_qs, urlparse
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lyrics_engine
 import lyrics_align
+import track_assets
 import video_formats
 
 PORT = 8765
@@ -309,7 +310,13 @@ def render_video(job, audio, cover, ass_path, out_path, preset="medium",
 
 
 def process_item(job, item, settings):
-    audio, cover = item["audio"], settings["cover"]
+    audio = item["audio"]
+    companions = track_assets.resolve_track_assets(audio)
+    cover = settings.get("cover") or companions["cover"]
+    if not cover:
+        raise RuntimeError(
+            "No companion artwork found. Add a PNG/JPG with the same track "
+            "name or choose fallback cover art.")
     name = os.path.splitext(os.path.basename(audio))[0]
     out_dir = settings.get("outputDir") or os.path.dirname(audio)
     format_name = settings.get("format", DEFAULTS["format"])
@@ -342,21 +349,36 @@ def process_item(job, item, settings):
     set_state(job, progress=0.35)
 
     # 1b. correct the words against the reference lyric sheet, if provided
+    track = None
+    auto_lyrics = False
     tracks = settings.get("_lyricTracks")
     if tracks:
         track = lyrics_align.match_track(tracks, audio)
-        if track:
-            trans_words = lyrics_engine.load_words(tjson)
-            data, st = lyrics_align.corrected_json(trans_words, track["lines"])
-            tjson = os.path.splitext(audio)[0] + ".corrected.json"
-            with open(tjson, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False)
-            log(job, f"Corrected lyrics from sheet ('{track['title']}'): "
-                     f"{st['matched']}/{st['ref_words']} words matched, "
-                     f"{st['synthesized']} re-timed")
-        else:
-            log(job, "WARNING: no matching track title in the lyric sheet — "
-                     "using raw transcription")
+    if not track and companions["lyrics"]:
+        track = track_assets.parse_track_lyrics(companions["lyrics"])
+        auto_lyrics = True
+
+    if track:
+        clean_lines = track_assets.clean_reference_lines(track["lines"])
+        trans_words = lyrics_engine.load_words(tjson)
+        data, st = lyrics_align.corrected_json(trans_words, clean_lines)
+        tjson = os.path.splitext(audio)[0] + ".corrected.json"
+        with open(tjson, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False)
+        source = (os.path.basename(companions["lyrics"])
+                  if auto_lyrics else track["title"])
+        log(job, f"Cleaned and aligned lyrics from '{source}': "
+                 f"{st['matched']}/{st['ref_words']} words matched, "
+                 f"{st['synthesized']} re-timed")
+    elif tracks:
+        log(job, "WARNING: no matching track title in the lyric sheet — "
+                 "using raw transcription")
+    else:
+        log(job, "WARNING: no companion lyric file found — using raw "
+                 "transcription")
+
+    if not settings.get("cover"):
+        log(job, f"Using companion artwork: {os.path.basename(cover)}")
 
     # 2. subtitles
     set_state(job, stage="styling")
@@ -419,17 +441,9 @@ def osascript(script):
     return r.stdout.strip()
 
 
-AUDIO_EXTS = (".wav", ".mp3", ".m4a", ".flac", ".aiff", ".aif", ".ogg")
-
-
 def scan_audio_folder(folder):
-    """All audio files in a folder (non-recursive), sorted by name."""
-    try:
-        names = sorted(os.listdir(folder), key=str.lower)
-    except OSError:
-        return []
-    return [os.path.join(folder, n) for n in names
-            if n.lower().endswith(AUDIO_EXTS) and not n.startswith(".")]
+    """All supported audio files below a chosen folder."""
+    return track_assets.scan_audio_tree(folder)
 
 
 def pick(kind):
@@ -532,11 +546,18 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 self._send(200, {"paths": [], "error": str(e)})
 
+        elif self.path == "/api/assets":
+            files = payload.get("files") or []
+            self._send(200, {
+                "items": [track_assets.resolve_track_assets(path)
+                          for path in files]
+            })
+
         elif self.path == "/api/start":
             files = payload.get("files") or []
             cover = payload.get("cover")
-            if not files or not cover:
-                self._send(400, {"error": "audio file(s) and cover art are required"})
+            if not files:
+                self._send(400, {"error": "at least one audio file is required"})
                 return
             format_name = payload.get("format", DEFAULTS["format"])
             try:
@@ -623,7 +644,7 @@ if __name__ == "__main__":
                     default=DEFAULTS["format"])
     a = ap.parse_args()
     if a.render:
-        missing = [name for name in ("audio", "cover", "out")
+        missing = [name for name in ("audio", "out")
                    if not getattr(a, name)]
         if missing:
             ap.error("--render requires " + ", ".join("--" + name for name in missing))

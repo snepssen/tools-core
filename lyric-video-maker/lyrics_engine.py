@@ -106,7 +106,7 @@ def group_lines(words, max_chars=34, max_words=8, gap_break=1.2):
 
 
 def wrap_line(words, max_chars, max_words):
-    """Split one pre-defined lyric line into display chunks that fit."""
+    """Split one lyric line into balanced display chunks that fit."""
     chunks, cur = [], []
     for w in words:
         if cur:
@@ -117,6 +117,18 @@ def wrap_line(words, max_chars, max_words):
         cur.append(w)
     if cur:
         chunks.append(cur)
+
+    # Avoid a one- or two-word orphan flashing on its own when a preceding
+    # chunk has room to share.
+    if len(chunks) > 1:
+        tail = chunks[-1]
+        previous = chunks[-2]
+        while len(tail) < 3 and len(previous) > 3:
+            candidate = previous[-1:] + tail
+            if (len(candidate) > max_words
+                    or len(" ".join(w["text"] for w in candidate)) > max_chars):
+                break
+            tail.insert(0, previous.pop())
     return chunks
 
 
@@ -181,7 +193,8 @@ def smart_size_mode(words, gap_break=1.2):
 
 def build_ass(lines, colors, font="Arial Black",
               active_size=72, inactive_size=54, gap=90, hold=0.35,
-              video_width=1920, video_height=1080, inactive_y=None):
+              video_width=1920, video_height=1080, inactive_y=None,
+              lines_per_page=5, page_lead=0.65):
     """Build the ASS document string.
 
     colors: {'accent': '#RRGGBB', 'active': '#RRGGBB', 'inactive': '#RRGGBB'}
@@ -189,7 +202,6 @@ def build_ass(lines, colors, font="Arial Black",
     """
     if inactive_y is None:
         inactive_y = video_height - 130
-    active_y = inactive_y - gap
     accent = hex_to_ass(colors.get("accent", "#FFD400"))
     active = hex_to_ass(colors.get("active", "#FFFFFF"))
     inactive = hex_to_ass(colors.get("inactive", "#8A99A8"))
@@ -208,45 +220,55 @@ def build_ass(lines, colors, font="Arial Black",
             f"Dialogue: 0,{_ass_time(start)},{_ass_time(end)},{style},,0,0,0,"
             f"{{\\an5\\pos({video_width // 2},{y})}}{text}\n")
 
-    n = len(lines)
-    for i, line in enumerate(lines):
-        # display window: from this line's start (or a short lead-in)
-        # until the next line starts (or line end + hold)
-        show_from = line["start"] - (0.5 if i == 0 else 0.0)
-        if i > 0:
-            show_from = max(show_from, lines[i - 1]["end"])
-            # became active as soon as previous line was cleared
-            show_from = min(show_from, line["start"])
-        show_until = lines[i + 1]["start"] if i + 1 < n else line["end"] + hold
-        show_until = max(show_until, line["end"])
+    # Keep several lines on screen as a stable reading page. Only the colour
+    # emphasis moves as the song advances; text no longer jumps after every
+    # very short phrase.
+    pages = [lines[i:i + lines_per_page]
+             for i in range(0, len(lines), lines_per_page)]
+    for page_index, page in enumerate(pages):
+        previous_end = (pages[page_index - 1][-1]["end"]
+                        if page_index else 0.0)
+        show_from = max(previous_end, page[0]["start"] - page_lead)
+        if page_index + 1 < len(pages):
+            next_page = pages[page_index + 1]
+            show_until = max(page[-1]["end"],
+                             next_page[0]["start"] - page_lead)
+        else:
+            show_until = page[-1]["end"] + hold
 
-        words = line["words"]
-        texts = [_esc(w["text"]) for w in words]
+        page_words = []
+        for line_index, line in enumerate(page):
+            page_words.extend((word, line_index, word_index)
+                              for word_index, word in enumerate(line["words"]))
 
-        def line_text(highlight_idx=None):
-            parts = []
-            for j, t in enumerate(texts):
-                if j == highlight_idx:
-                    parts.append(f"{{\\c{accent}}}{t}{{\\c{active}}}")
-                else:
-                    parts.append(t)
-            return " ".join(parts)
+        def draw_page(start, end, active_line, highlight=None):
+            first_y = inactive_y - gap * (len(page) - 1)
+            for line_index, line in enumerate(page):
+                is_current = line_index == active_line
+                base_color = active if is_current else inactive
+                parts = []
+                for word_index, word in enumerate(line["words"]):
+                    text = _esc(word["text"])
+                    if highlight == (line_index, word_index):
+                        parts.append(
+                            f"{{\\c{accent}}}{text}{{\\c{base_color}}}")
+                    else:
+                        parts.append(text)
+                ev("Active" if is_current else "Inactive", start, end,
+                   first_y + line_index * gap, " ".join(parts))
 
-        # timeline of the active line: plain segments + highlighted word segments
         cursor = show_from
-        for j, w in enumerate(words):
-            if w["start"] > cursor:
-                ev("Active", cursor, w["start"], active_y, line_text(None))
-            w_end = max(w["end"], w["start"] + 0.05)
-            ev("Active", max(w["start"], cursor), w_end, active_y, line_text(j))
-            cursor = w_end
+        current_line = 0
+        for word, line_index, word_index in page_words:
+            if word["start"] > cursor:
+                draw_page(cursor, word["start"], current_line)
+            word_end = max(word["end"], word["start"] + 0.05)
+            draw_page(max(word["start"], cursor), word_end, line_index,
+                      (line_index, word_index))
+            current_line = line_index
+            cursor = word_end
         if show_until > cursor:
-            ev("Active", cursor, show_until, active_y, line_text(None))
-
-        # inactive (next) line below
-        if i + 1 < n:
-            ev("Inactive", show_from, show_until, inactive_y,
-               _esc(lines[i + 1]["text"]))
+            draw_page(cursor, show_until, current_line)
 
     return "".join(out)
 
