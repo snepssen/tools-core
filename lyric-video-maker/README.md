@@ -25,10 +25,12 @@ python3 lyric-video-maker/app.py
 The app opens a token-protected page on `127.0.0.1`. The token changes every
 run; use the page opened by the app rather than typing the bare address.
 
-Select a single file or a folder, optionally choose fallback cover art, a lyric
-sheet, and an output folder, choose the output format, then create the video.
-A batch searches the chosen folder recursively and processes supported audio
-files sequentially.
+Select a single file or a folder. Matching artwork and lyrics are selected
+automatically, so their rows turn green when the track is ready; those controls
+remain available only when you want an override. Choose an output folder if
+needed, set the format and lyric treatment, then create the video. A batch
+searches the chosen folder recursively and processes supported audio files
+sequentially.
 
 For each audio track, the app automatically finds sibling artwork and lyrics
 with the same logical filename. Punctuation and case do not need to match, so
@@ -39,10 +41,24 @@ fallback/override.
 Suno-style Markdown is cleaned for display without modifying the source file:
 the title, bracketed arrangement directions, Suno style tags, negative tags,
 Markdown decoration, and display-hostile punctuation are omitted. MacWhisper
-still supplies the word timing. Lyrics render in stable five-line reading
-pages so fast phrases remain visible while the current word is highlighted.
+still supplies the word timing. Lyrics render in stable reading pages so fast
+phrases remain visible while the current word is highlighted. The UI controls
+whether each page contains one to five lines, places it in the lower third or
+centre, and previews the selected font, sizing, spacing, and colours.
 Portrait renders use a conservative mobile-safe lyric position and add
 `-short` to the filename so they can sit beside the landscape render.
+
+## Motion and light
+
+- **Still** leaves the artwork clean and motionless.
+- **Ambient** adds slow cover drift and a shallow, fully fading edge glow.
+- **Party Hard** adds stronger movement and jumps the colour treatment once per
+  beat. Leave BPM empty to estimate it from the audio, or enter 40–240 BPM for
+  deterministic timing.
+
+The audio equaliser can be disabled or placed along the bottom or right edge.
+Its frequency bars are drawn from the real audio stream and remain behind the
+burned-in lyrics.
 
 ## Correct lyrics
 
@@ -60,11 +76,13 @@ Timed JSON is searched beside the audio as `<song>.words.json` and then
 ```sh
 python3 lyric-video-maker/app.py --render \
   --audio song.wav --json song.words.json \
-  --format portrait --out song-short.mp4
+  --format portrait --lines 3 --lyric-position center \
+  --visual ambient --waveform bottom --out song-short.mp4
 ```
 
 Omit `--format portrait` (or pass `--format landscape`) for a 1920x1080 video.
 If no matching image sits beside the audio, pass `--cover cover.jpg`.
+For Party Hard, pass `--visual party`; optionally add `--bpm 128`.
 
 Convert the simple MacWhisper word-list form to SRT with:
 

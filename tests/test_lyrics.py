@@ -10,6 +10,7 @@ sys.path.insert(0, str(TOOL))
 
 import lyrics_align  # noqa: E402
 import lyrics_engine  # noqa: E402
+import video_effects  # noqa: E402
 import video_formats  # noqa: E402
 
 
@@ -82,6 +83,37 @@ class LyricsEngineTests(unittest.TestCase):
         self.assertTrue(any("three" in line for line in first_window))
         self.assertTrue(any("four" in line for line in first_window))
 
+    def test_line_count_limits_each_reading_page(self):
+        lines = [{
+            "start": index, "end": index + 1, "text": word,
+            "words": [{"text": word, "start": index, "end": index + 1}],
+        } for index, word in enumerate(("one", "two", "three", "four"))]
+        ass = lyrics_engine.build_ass(
+            lines,
+            {"accent": "#FFD400", "active": "#FFFFFF",
+             "inactive": "#8A99A8"},
+            lines_per_page=2,
+        )
+        first_window = [line for line in ass.splitlines()
+                        if ",0:00:00.00,0:00:01.00," in line]
+        self.assertEqual(len(first_window), 2)
+        self.assertFalse(any("three" in line for line in first_window))
+
+    def test_centre_position_straddles_canvas_midpoint(self):
+        lines = [{
+            "start": index, "end": index + 1, "text": word,
+            "words": [{"text": word, "start": index, "end": index + 1}],
+        } for index, word in enumerate(("one", "two", "three"))]
+        ass = lyrics_engine.build_ass(
+            lines,
+            {"accent": "#FFD400", "active": "#FFFFFF",
+             "inactive": "#8A99A8"},
+            gap=100, lyric_position="center",
+        )
+        self.assertIn(r"\pos(960,440)", ass)
+        self.assertIn(r"\pos(960,540)", ass)
+        self.assertIn(r"\pos(960,640)", ass)
+
     def test_wrap_line_rebalances_a_short_orphan(self):
         words = [{"text": word, "start": index, "end": index + 0.5}
                  for index, word in enumerate(
@@ -100,6 +132,39 @@ class VideoFormatTests(unittest.TestCase):
     def test_unknown_format_is_rejected(self):
         with self.assertRaisesRegex(ValueError, "Unknown video format"):
             video_formats.get_video_format("square")
+
+
+class VideoEffectsTests(unittest.TestCase):
+    def test_ambient_bottom_waveform_builds_mapped_filter_graph(self):
+        graph, audio_map = video_effects.build_filter_graph(
+            video_formats.VIDEO_FORMATS["landscape"], "words.ass",
+            {"visualMode": "ambient", "waveform": "bottom",
+             "accent": "#FFD400"},
+        )
+        self.assertIn("zoompan=", graph)
+        self.assertIn("showfreqs=s=1920x", graph)
+        self.assertIn("subtitles='words.ass'[video]", graph)
+        self.assertEqual(audio_map, "[audioout]")
+
+    def test_party_mode_uses_manual_tempo_and_side_waveform(self):
+        graph, _ = video_effects.build_filter_graph(
+            video_formats.VIDEO_FORMATS["portrait"], "words.ass",
+            {"visualMode": "party", "waveform": "side",
+             "accent": "#12ABEF"}, bpm=128,
+        )
+        self.assertIn("t*128.000/60", graph)
+        self.assertIn("showfreqs=s=1920x", graph)
+        self.assertIn("transpose=1", graph)
+
+    def test_estimates_synthetic_120_bpm_pulse(self):
+        sample_rate = 400
+        samples = [0.0] * (sample_rate * 12)
+        for index in range(0, len(samples), sample_rate // 2):
+            for offset in range(8):
+                samples[index + offset] = 1.0
+        bpm = video_effects.estimate_bpm_from_samples(samples, sample_rate)
+        self.assertIsNotNone(bpm)
+        self.assertLessEqual(abs(bpm - 120), 2)
 
 
 class LyricsAlignmentTests(unittest.TestCase):

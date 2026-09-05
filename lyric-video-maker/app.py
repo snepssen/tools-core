@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import lyrics_engine
 import lyrics_align
 import track_assets
+import video_effects
 import video_formats
 
 PORT = 8765
@@ -45,7 +46,12 @@ DEFAULTS = {
     "sizeMode": "default",   # big | default | dense
     "smartSize": False,      # pick size mode per track automatically
     "spacing": "tight",      # tight | normal | wide
+    "lineCount": 5,          # stable lyric lines visible together
+    "lyricPosition": "lower",  # lower | center
     "lineGap": 1.2,
+    "visualMode": "ambient",  # still | ambient | party
+    "waveform": "bottom",     # off | bottom | side
+    "bpm": 0,                 # 0 estimates tempo for Party Hard
     "mwCmd": 'mw transcribe --persist "{input}"',
     "preset": "medium",
     "format": "landscape",
@@ -264,7 +270,7 @@ def prepare_cover(cover, out_dir, format_name):
 
 
 def render_video(job, audio, cover, ass_path, out_path, preset="medium",
-                 format_name="landscape"):
+                 format_name="landscape", settings=None):
     if not FFMPEG:
         raise RuntimeError(
             "No ffmpeg with subtitle support found. Run: "
@@ -272,10 +278,28 @@ def render_video(job, audio, cover, ass_path, out_path, preset="medium",
     dur = audio_duration(audio)
     prepared_cover = prepare_cover(cover, os.path.dirname(out_path), format_name)
     sub = escape_for_subtitles_filter(ass_path)
-    vf = f"fps=60,subtitles='{sub}'"
+    settings = settings or DEFAULTS
+    bpm = None
+    if settings.get("visualMode") == "party":
+        try:
+            manual_bpm = float(settings.get("bpm") or 0)
+        except (TypeError, ValueError):
+            manual_bpm = 0
+        if manual_bpm > 0:
+            bpm = max(40.0, min(manual_bpm, 240.0))
+            log(job, f"Party Hard tempo: {bpm:g} BPM (manual)")
+        else:
+            estimated = video_effects.estimate_bpm(audio, FFMPEG)
+            bpm = estimated or 120.0
+            log(job, f"Party Hard tempo: {bpm:g} BPM "
+                     f"({'estimated' if estimated else 'fallback'})")
+    profile = video_formats.get_video_format(format_name)
+    filters, audio_map = video_effects.build_filter_graph(
+        profile, sub, settings, bpm=bpm)
     cmd = [FFMPEG, "-y", "-loop", "1", "-framerate", "60", "-i", prepared_cover,
            "-i", audio,
-           "-vf", vf,
+           "-filter_complex", filters,
+           "-map", "[video]", "-map", audio_map,
            "-c:v", "libx264", "-preset", preset, "-crf", "18",
            "-pix_fmt", "yuv420p", "-r", "60",
            "-c:a", "aac", "-b:a", "320k",
@@ -392,17 +416,21 @@ def process_item(job, item, settings):
         spacing=settings.get("spacing", DEFAULTS["spacing"]),
         smart=bool(settings.get("smartSize", False)),
         gap_break=float(settings.get("lineGap", DEFAULTS["lineGap"])),
+        line_count=int(settings.get("lineCount", DEFAULTS["lineCount"])),
+        lyric_position=settings.get("lyricPosition", DEFAULTS["lyricPosition"]),
         video_format=format_name)
     smart_note = " (Smart)" if settings.get("smartSize") else ""
     log(job, f"Styled {nwords} words into {nlines} lyric lines "
              f"— {used_mode} size{smart_note} · "
+             f"{settings.get('lineCount', DEFAULTS['lineCount'])} lines · "
+             f"{settings.get('lyricPosition', DEFAULTS['lyricPosition'])} · "
              f"{profile['width']}x{profile['height']}")
     set_state(job, progress=0.40)
 
     # 3. video
     render_video(job, audio, cover, ass_path, out_path,
                  preset=settings.get("preset", "medium"),
-                 format_name=format_name)
+                 format_name=format_name, settings=settings)
     log(job, f"Done: {out_path}")
     return out_path
 
@@ -574,7 +602,8 @@ class Handler(BaseHTTPRequestHandler):
                 JOBS[jid] = job
             settings = {k: payload.get(k, DEFAULTS.get(k)) for k in
                         ("accent", "active", "inactive", "font", "sizeMode",
-                         "smartSize", "spacing", "lineGap", "mwCmd",
+                         "smartSize", "spacing", "lineCount", "lyricPosition",
+                         "lineGap", "visualMode", "waveform", "bpm", "mwCmd",
                          "reuseJson", "outputDir", "lyricsFile", "format")}
             settings["cover"] = cover
             threading.Thread(target=worker, args=(job, settings),
@@ -611,7 +640,10 @@ def cli_render(args):
     settings = dict(DEFAULTS)
     settings.update({"cover": args.cover, "reuseJson": True,
                      "outputDir": os.path.dirname(os.path.abspath(args.out)),
-                     "format": args.format})
+                     "format": args.format, "lineCount": args.lines,
+                     "lyricPosition": args.lyric_position,
+                     "visualMode": args.visual, "waveform": args.waveform,
+                     "bpm": args.bpm})
     if args.accent:
         settings["accent"] = args.accent
     if args.preset:
@@ -642,6 +674,16 @@ if __name__ == "__main__":
     ap.add_argument("--preset")
     ap.add_argument("--format", choices=tuple(video_formats.VIDEO_FORMATS),
                     default=DEFAULTS["format"])
+    ap.add_argument("--lines", type=int, choices=range(1, 6),
+                    default=DEFAULTS["lineCount"])
+    ap.add_argument("--lyric-position", choices=("lower", "center"),
+                    default=DEFAULTS["lyricPosition"])
+    ap.add_argument("--visual", choices=video_effects.VISUAL_MODES,
+                    default=DEFAULTS["visualMode"])
+    ap.add_argument("--waveform", choices=video_effects.WAVEFORM_MODES,
+                    default=DEFAULTS["waveform"])
+    ap.add_argument("--bpm", type=float, default=DEFAULTS["bpm"],
+                    help="Party Hard tempo; 0 estimates it from the audio")
     a = ap.parse_args()
     if a.render:
         missing = [name for name in ("audio", "out")

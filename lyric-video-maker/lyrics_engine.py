@@ -194,7 +194,7 @@ def smart_size_mode(words, gap_break=1.2):
 def build_ass(lines, colors, font="Arial Black",
               active_size=72, inactive_size=54, gap=90, hold=0.35,
               video_width=1920, video_height=1080, inactive_y=None,
-              lines_per_page=5, page_lead=0.65):
+              lines_per_page=5, page_lead=0.65, lyric_position="lower"):
     """Build the ASS document string.
 
     colors: {'accent': '#RRGGBB', 'active': '#RRGGBB', 'inactive': '#RRGGBB'}
@@ -202,6 +202,9 @@ def build_ass(lines, colors, font="Arial Black",
     """
     if inactive_y is None:
         inactive_y = video_height - 130
+    lines_per_page = max(1, min(int(lines_per_page), 5))
+    if lyric_position not in ("lower", "center"):
+        lyric_position = "lower"
     accent = hex_to_ass(colors.get("accent", "#FFD400"))
     active = hex_to_ass(colors.get("active", "#FFFFFF"))
     inactive = hex_to_ass(colors.get("inactive", "#8A99A8"))
@@ -242,7 +245,10 @@ def build_ass(lines, colors, font="Arial Black",
                               for word_index, word in enumerate(line["words"]))
 
         def draw_page(start, end, active_line, highlight=None):
-            first_y = inactive_y - gap * (len(page) - 1)
+            if lyric_position == "center":
+                first_y = round(video_height / 2 - gap * (len(page) - 1) / 2)
+            else:
+                first_y = inactive_y - gap * (len(page) - 1)
             for line_index, line in enumerate(page):
                 is_current = line_index == active_line
                 base_color = active if is_current else inactive
@@ -275,7 +281,8 @@ def build_ass(lines, colors, font="Arial Black",
 
 def transcript_to_ass(json_path, ass_path, colors, font="Arial Black",
                       size_mode="default", spacing="tight", smart=False,
-                      gap_break=1.2, video_format="landscape"):
+                      gap_break=1.2, line_count=5, lyric_position="lower",
+                      video_format="landscape"):
     # corrected/aligned transcripts carry their own line structure
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
@@ -320,7 +327,9 @@ def transcript_to_ass(json_path, ass_path, colors, font="Arial Black",
                     inactive_size=inactive_size, gap=gap,
                     video_width=profile["width"],
                     video_height=profile["height"],
-                    inactive_y=profile["inactive_y"])
+                    inactive_y=profile["inactive_y"],
+                    lines_per_page=line_count,
+                    lyric_position=lyric_position)
     with open(ass_path, "w", encoding="utf-8") as f:
         f.write(doc)
     return len(words), len(lines), size_mode
