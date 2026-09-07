@@ -269,8 +269,21 @@
       *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
     }
   </style>
+  <link rel="stylesheet" href="ecosystem.css">
 </head>
-<body>
+<body data-project="tools-core">
+  <div class="ecosystem-progress" aria-hidden="true"><span></span></div>
+  <nav class="ecosystem-rail" aria-label="Snepssen project network">
+    <div class="ecosystem-rail__inner">
+      <a class="ecosystem-rail__brand" href="https://snepssen.github.io/tools-core/"><span>snepssen / workshop</span></a>
+      <div class="ecosystem-rail__links">
+        <a data-project="gateway-forge" href="https://snepssen.github.io/gateway-forge/">Gateway Forge</a>
+        <a data-project="voice-forge" href="https://snepssen.github.io/voice-forge/">Voice Forge</a>
+        <a data-project="protoke" href="https://snepssen.github.io/protoke/">Protoke</a>
+        <a data-project="tools-core" href="https://snepssen.github.io/tools-core/">tools-core</a>
+      </div>
+    </div>
+  </nav>
   <nav class="site-nav" aria-label="Main navigation">
     <div class="wrap nav-inner">
       <a class="wordmark" href="#top"><span>~/</span>snepssen</a>
@@ -519,6 +532,48 @@
       </div>
     </section>
 
+    <section class="ecosystem-more" aria-labelledby="ecosystem-heading" data-eco-reveal>
+      <div class="wrap">
+        <div class="ecosystem-more__head">
+          <div>
+            <p class="ecosystem-kicker">The wider workshop</p>
+            <h2 id="ecosystem-heading">Four tools, one local-first practice.</h2>
+          </div>
+          <p class="ecosystem-more__intro">Move between guided-meditation authoring, measured speech, lyric video, and the small field tools that support all three.</p>
+        </div>
+        <div class="ecosystem-grid">
+          <a class="ecosystem-card" data-project="gateway-forge" href="https://snepssen.github.io/gateway-forge/">
+            <div class="ecosystem-card__index"><span>01 / JOURNEYS</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__glyph" aria-hidden="true">F10 ── F27</div>
+            <h3>Gateway Forge</h3>
+            <p>Assemble guided sessions and keep published maps beside what was actually found.</p>
+            <span class="ecosystem-card__go">Explore Gateway Forge →</span>
+          </a>
+          <a class="ecosystem-card" data-project="voice-forge" href="https://snepssen.github.io/voice-forge/">
+            <div class="ecosystem-card__index"><span>02 / SPEECH</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__glyph" aria-hidden="true">⌁ / həˈləʊ /</div>
+            <h3>Voice Forge</h3>
+            <p>A transparent Piper workbench for timing, pronunciation, and honest audio export.</p>
+            <span class="ecosystem-card__go">Explore Voice Forge →</span>
+          </a>
+          <a class="ecosystem-card" data-project="protoke" href="https://snepssen.github.io/protoke/">
+            <div class="ecosystem-card__index"><span>03 / VIDEO</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__glyph" aria-hidden="true">◤ w ◥</div>
+            <h3>Protoke</h3>
+            <p>Karaoke and narration video with a vector visor face that mouths every word.</p>
+            <span class="ecosystem-card__go">Explore Protoke →</span>
+          </a>
+          <a class="ecosystem-card" data-project="tools-core" href="https://snepssen.github.io/tools-core/">
+            <div class="ecosystem-card__index"><span>04 / FIELD TOOLS</span><span>Python · shell</span></div>
+            <div class="ecosystem-card__glyph" aria-hidden="true">[ measure → keep ]</div>
+            <h3>tools-core</h3>
+            <p>Small utilities for audio inspection, corpus work, authoring, and repeatable checks.</p>
+            <span class="ecosystem-card__go">Open the toolbox →</span>
+          </a>
+        </div>
+      </div>
+    </section>
+
     <section id="contact">
       <div class="wrap">
         <div class="contact-panel">
@@ -540,5 +595,6 @@
   <footer><div class="wrap">Built as plain HTML · no analytics · no trackers · source on <a href="https://github.com/snepssen/tools-core">GitHub</a></div></footer>
   <script src="face-loop.js"></script>
   <script src="site.js"></script>
+  <script src="ecosystem.js"></script>
 </body>
 </html>

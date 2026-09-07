@@ -44,6 +44,16 @@ are documented in [`requirements/`](requirements/). Large ML stacks are not
 installed automatically because compatible versions depend on the model and
 hardware being investigated.
 
+## The wider workshop
+
+- [Gateway Forge](https://snepssen.github.io/gateway-forge/) — guided-session
+  authoring and an experience journal.
+- [Voice Forge](https://snepssen.github.io/voice-forge/) — measured Piper
+  speech, pronunciation, and export.
+- [Protoke](https://snepssen.github.io/protoke/) — lyric and narration video
+  with a word-timed vector face.
+- [tools-core](https://snepssen.github.io/tools-core/) — this repository.
+
 ## Privacy and scope
 
 - These tools take explicit paths and act only on what you name.
