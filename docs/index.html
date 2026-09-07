@@ -150,6 +150,9 @@
     .tools-plate { height: 100%; display: grid; place-items: center; padding: 36px; background: #12120f; }
     .tool-tree { width: min(100%, 520px); font: 13px/1.9 var(--mono); color: #a9a596; }
     .tool-tree b { color: var(--tools); font-weight: 500; }
+    .face-plate { width: min(100%, 520px); font: 13px/2.4 var(--mono); color: #a9a596; }
+    .face-plate span { display: inline-block; min-width: 6.5em; }
+    .face-plate b { color: var(--tools); font-weight: 500; font-size: 15px; }
     .tool-tree strong { color: var(--chalk); font-weight: 500; }
 
     .quickstart {
@@ -215,6 +218,10 @@
     .lab button.primary { border-color: var(--signal); background: var(--signal); color: var(--ink); }
     .lab button.primary[data-playing="true"] { border-color: var(--tools); background: var(--tools); }
     #signalCanvas { width: 100%; height: 130px; margin-top: auto; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    /* The drawing buffer is a fixed 520x230; let the element scale to the
+       column instead of overflowing it. Without this it is wider than the
+       stage that centres it and hangs off the right-hand side. */
+    #faceCanvas { display: block; width: 100%; max-width: 520px; height: auto; }
     .lab-status { min-height: 20px; color: var(--signal); font: 11px/1.6 var(--mono); }
     .safety { color: #777467 !important; font-size: 11px !important; }
     .lyric-stage { display: grid; place-items: center; flex: 1; min-height: 185px; margin: 10px 0 18px; padding: 24px; background: #11110e; text-align: center; }
@@ -295,7 +302,7 @@
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Three public projects</p>
+            <p class="eyebrow">Four public projects</p>
             <h2>The workbench</h2>
           </div>
           <p class="section-copy">Each project has its own repository and field notes. The apps stay local; the measurements, trade-offs, and failures are left visible.</p>
@@ -336,9 +343,25 @@
 
           <article class="project tools">
             <div class="project-copy">
-              <span class="project-no">03 / FIELD TOOLS</span>
+              <span class="project-no">03 / FACE</span>
+              <h3>Protoke</h3>
+              <p><em>proto</em> + <em>karaoke</em>. A karaoke and narration renderer fronted by a protogen visor face — two eyes and a mouth drawn as vector outlines and burned in by the same libass pass that draws the lyrics, so there is no image sequence to composite.</p>
+              <div class="project-meta">Python · macOS, Linux, Windows · MIT</div>
+              <div class="project-actions">
+                <a class="button" href="#samples">See the face</a>
+                <a class="button ghost" href="https://github.com/snepssen/protoke">GitHub</a>
+              </div>
+            </div>
+            <div class="project-media tools-plate" aria-label="Protoke expression set">
+              <div class="face-plate"><span><b>◤‿◥</b> visor</span><span><b>^w^</b> happy</span><span><b>▶_◀</b> sharp</span><br><span><b>¬‿¬</b> smug</span><span><b>o_o</b> wide</span><span><b>-_-</b> sleepy</span><br><span><b>owo</b> curious</span><span><b>^o^</b> delighted</span><span><b>^_^</b> content</span></div>
+            </div>
+          </article>
+
+          <article class="project tools">
+            <div class="project-copy">
+              <span class="project-no">04 / FIELD TOOLS</span>
               <h3>tools-core</h3>
-              <p>The useful pieces that fell out of the larger work: lyric-video production, audio forensics, corpus preparation, Piper workflows, and Qwen3-TTS truth probes.</p>
+              <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, and Qwen3-TTS truth probes.</p>
               <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
               <div class="project-actions">
                 <a class="button" href="#tools">Open the toolbox</a>
@@ -346,7 +369,7 @@
               </div>
             </div>
             <div class="project-media tools-plate" aria-label="tools-core directory map">
-              <div class="tool-tree"><strong>tools-core/</strong><br>├── <b>lyric-video-maker/</b><br>├── audio-analysis/<br>├── gateway-authoring/<br>├── piper-workflows/<br>└── tts-research/</div>
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── gateway-authoring/<br>├── piper-workflows/<br>└── tts-research/</div>
             </div>
           </article>
         </div>
@@ -370,21 +393,12 @@
 
         <div class="filters" role="group" aria-label="Filter tools">
           <button class="filter" type="button" data-filter="all" aria-pressed="true">Everything</button>
-          <button class="filter" type="button" data-filter="media" aria-pressed="false">Media</button>
           <button class="filter" type="button" data-filter="audio" aria-pressed="false">Audio</button>
           <button class="filter" type="button" data-filter="speech" aria-pressed="false">Speech</button>
           <button class="filter" type="button" data-filter="gateway" aria-pressed="false">Gateway</button>
         </div>
 
         <div class="tool-grid" aria-live="polite">
-          <article class="tool-card" data-kind="media">
-            <span class="tag">Media / macOS UI</span>
-            <h3>Lyric Video Maker</h3>
-            <p>Auto-match each track's artwork and clean lyric Markdown, align it to MacWhisper timing, then render readable karaoke pages in landscape or portrait with ffmpeg.</p>
-            <div class="command"><code>python3 lyric-video-maker/app.py</code><button class="copy" type="button" data-copy="python3 lyric-video-maker/app.py" aria-label="Copy Lyric Video Maker command">Copy</button></div>
-            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/lyric-video-maker">Instructions ↗</a>
-          </article>
-
           <article class="tool-card" data-kind="audio">
             <span class="tag">Audio / measurement</span>
             <h3>Beat analyser</h3>
@@ -471,6 +485,19 @@
             </div>
             <div class="beat-readout" id="lyricStatus" aria-live="polite">00:00.000 / 00:05.200</div>
           </article>
+
+          <article class="lab">
+            <span class="project-no mono">C / FACE</span>
+            <h3>The face is a subtitle track</h3>
+            <p>No image sequence and no video layer: two eyes and a mouth, drawn from a dozen numbers and burned in by the same libass that draws the lyrics. These are <a href="https://github.com/snepssen/protoke">Protoke</a>'s own frames, played back.</p>
+            <div class="lyric-stage">
+              <canvas id="faceCanvas" width="520" height="230" aria-label="Animated protogen-style visor face, blinking and mouthing words"></canvas>
+            </div>
+            <div class="lab-controls">
+              <button class="primary" id="faceToggle" type="button" data-playing="false">Play the face</button>
+            </div>
+            <div class="beat-readout" id="faceStatus" aria-live="polite">64 frames · 3 shapes · one loop</div>
+          </article>
         </div>
       </div>
     </section>
@@ -511,6 +538,7 @@
   </main>
 
   <footer><div class="wrap">Built as plain HTML · no analytics · no trackers · source on <a href="https://github.com/snepssen/tools-core">GitHub</a></div></footer>
+  <script src="face-loop.js"></script>
   <script src="site.js"></script>
 </body>
 </html>

@@ -191,3 +191,70 @@ lyricToggle.addEventListener("click", () => {
   lyricStart = performance.now();
   lyricFrame = window.requestAnimationFrame(drawLyrics);
 });
+
+
+/* The face demo. The frames are the renderer's own geometry, exported from
+   the Python that draws the videos — not a second implementation in
+   JavaScript, which would drift from the first the moment either changed.
+   The page only plays them back. */
+(function face() {
+  const canvas = document.getElementById('faceCanvas');
+  const toggle = document.getElementById('faceToggle');
+  const status = document.getElementById('faceStatus');
+  if (!canvas || !toggle) return;
+
+  const ctx = canvas.getContext('2d');
+  let loop = null, at = 0, timer = null;
+
+  function draw() {
+    if (!loop) return;
+    const frame = loop.frames[at % loop.frames.length];
+    at += 1;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    const scale = canvas.height / (loop.unit * 0.66);
+    ctx.save();
+    ctx.translate(canvas.width / 2, canvas.height / 2);
+    ctx.fillStyle = '#7fd1e8';
+    ctx.shadowColor = '#7fd1e8';
+    ctx.shadowBlur = 12;
+    for (const shape of frame) {
+      ctx.beginPath();
+      for (let i = 0; i < shape.length; i += 2) {
+        const x = shape[i] * scale, y = shape[i + 1] * scale;
+        if (i) ctx.lineTo(x, y); else ctx.moveTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  function stop() {
+    clearInterval(timer);
+    timer = null;
+    toggle.dataset.playing = 'false';
+    toggle.textContent = 'Play the face';
+  }
+
+  function start() {
+    if (!loop) {
+      loop = window.FACE_LOOP;
+      if (!loop) {
+        status.textContent = 'The face frames could not be loaded.';
+        return;
+      }
+      status.textContent = `${loop.frames.length} frames · ${loop.frames[0].length} shapes · one loop`;
+    }
+    timer = setInterval(draw, 1000 / (loop.fps || 20));
+    toggle.dataset.playing = 'true';
+    toggle.textContent = 'Stop';
+  }
+
+  toggle.addEventListener('click', () => {
+    if (toggle.dataset.playing === 'true') stop(); else start();
+  });
+  /* A hidden tab should not keep animating. */
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && toggle.dataset.playing === 'true') stop();
+  });
+})();
