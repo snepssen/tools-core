@@ -52,6 +52,9 @@ hardware being investigated.
   speech, pronunciation, and export.
 - [Protoke](https://snepssen.github.io/protoke/) — lyric and narration video
   with a word-timed vector face.
+- [Media Preflight](https://snepssen.github.io/media-preflight/) — check a
+  finished file against a delivery target, and correct it without touching
+  the original.
 - [tools-core](https://snepssen.github.io/tools-core/) — this repository.
 
 ## Privacy and scope
