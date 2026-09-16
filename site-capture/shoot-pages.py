@@ -489,6 +489,35 @@ def contact_sheet(out_dir, pages, theme, width, fold=1180, cols=3, tile=470):
     return path
 
 
+def preview_card(out_dir, root, slug, top=120, size=(1200, 630)):
+    """The page's Open Graph card: the masthead, at the size link previews use.
+
+    This is the one thing here that is written into a repository, because it
+    has to be served from the site it describes — og:image takes an absolute
+    URL and a scraper fetches it directly. 1200x630 is what the platforms
+    crop to; taken from the dark capture, since these pages are dark-first and
+    a preview cannot ask the reader which they prefer.
+
+    The crop starts below the project rail and runs to just past the jump
+    navigation, which is the badge, the title, the subheading and the counts:
+    on every page here that is the part worth seeing at thumbnail size.
+    """
+    if Image is None:
+        print("  previews need Pillow", file=sys.stderr)
+        return None
+    source = out_dir / f"{slug}-page-dark.png"
+    if not source.is_file():
+        return None
+    target = root / slug / "docs" / "preview.png"
+    if not target.parent.is_dir():
+        return None
+    band = round(1440 * size[1] / size[0])
+    with Image.open(source) as opened:
+        card = opened.convert("RGB").crop((0, top, 1440, top + band))
+        card.resize(size, Image.LANCZOS).save(target, optimize=True)
+    return target
+
+
 # ---------------------------------------------------------------------------
 
 def main():
@@ -504,6 +533,9 @@ def main():
                         help="report page heights instead of capturing")
     parser.add_argument("--no-trim", action="store_true",
                         help="report an overshoot without correcting it")
+    parser.add_argument("--previews", action="store_true",
+                        help="also write each page's Open Graph card to "
+                             "<root>/<slug>/docs/preview.png")
     args = parser.parse_args()
 
     catalogue = json.loads(CATALOGUE.read_text(encoding="utf-8"))
@@ -551,6 +583,14 @@ def main():
                     failed = True
                 size = out.stat().st_size // 1024
                 print(f"  {out.name:34} {size:>5} KB   {note}")
+
+        if args.previews:
+            print()
+            for page in pages:
+                card = preview_card(out_dir, root, page["slug"])
+                if card:
+                    print(f"  {str(card.relative_to(root)):34} "
+                          f"{card.stat().st_size // 1024:>5} KB   link preview")
 
         for theme in ("dark", "light"):
             sheet = contact_sheet(out_dir, pages, theme, width)

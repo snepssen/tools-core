@@ -14,9 +14,24 @@ from `<root>/<slug>/docs`. Images land in `./page-shots` unless `--out` says
 otherwise: one PNG per page per theme, 1440px wide, plus a contact sheet of
 every page above the fold.
 
-Nothing is written into any repository. Each `docs` directory is copied to a
-staging area and the copy is what gets modified; the staging area is removed
-afterwards.
+Nothing is written into any repository unless `--previews` is given. Each
+`docs` directory is copied to a staging area and the copy is what gets
+modified; the staging area is removed afterwards.
+
+## Link previews
+
+```sh
+python3 site-capture/shoot-pages.py --root ~/code --previews
+```
+
+Also writes `<root>/<slug>/docs/preview.png` for each page: the masthead at
+1200x630, which is what `og:image` points at and what a chat client or a
+social card crops to. It has to live in the repository because `og:image`
+takes an absolute URL and the scraper fetches it from the site itself.
+
+Taken from the dark capture — these pages are dark-first and a link preview
+cannot ask the reader which they would like. Run it again after a masthead
+changes, or the card will go on advertising the old one.
 
 ## Adding a page
 
