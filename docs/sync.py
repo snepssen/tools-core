@@ -11,11 +11,12 @@ and no jump bar at all. Running it through the project-page generator would
 mean teaching that generator five special cases that only this page ever uses,
 which is the coupling the generator exists to avoid.
 
-What this page does share is the project rail and the ecosystem grid — and
-those are exactly the parts that go stale when a project is added or renamed.
-So those two regions are rewritten from the same ecosystem.json and the same
-build.py functions the other pages use, and everything else here stays hand-
-written, which is what it wants to be.
+What this page does share is the project rail, the ecosystem grid and the
+contact card — the parts that go stale when a project is added, or that get
+re-invented every time somebody writes the same section again. Those three
+regions are rewritten from the same ecosystem.json and the same build.py
+functions the other pages use, and everything else here stays hand-written,
+which is what it wants to be.
 """
 
 import argparse
@@ -29,6 +30,11 @@ import build
 HERE = Path(__file__).resolve().parent
 PAGE = HERE / "index.html"
 SLUG = "tools-core"
+
+# The hub's own line under the shared contact heading. Every other page keeps
+# this in its catalogue; this one has no catalogue, so it lives here.
+NOTE = ("Bug reports belong in the project that produced them. For everything "
+        "else, email or Telegram reaches me directly.")
 
 
 def replace(html, start, end, new):
@@ -48,6 +54,16 @@ def sync(html, ecosystem):
                f"{inner}\n      </div>\n    </section>\n")
     html, _ = replace(html, '    <section class="ecosystem-more"',
                       "      </div>\n    </section>\n", section)
+
+    # The contact card, from the same source as every other page's. This page
+    # used to have its own arrangement — a panel, three links with handles, its
+    # own heading — which is exactly the drift the shared version ends.
+    page = {"meta": {"slug": SLUG, "contact_note": NOTE}}
+    inner = build.reindent(build.contact_inner(page, ecosystem), 6)
+    contact = ('    <section id="contact">\n      <div class="wrap">\n'
+               f"{inner}\n      </div>\n    </section>\n")
+    html, _ = replace(html, '    <section id="contact">',
+                      "      </div>\n    </section>\n", contact)
     return html
 
 
@@ -67,7 +83,7 @@ def main():
               file=sys.stderr)
         return 1
     PAGE.write_text(wanted, encoding="utf-8")
-    print("docs/index.html — rail and ecosystem grid rewritten from the catalogue")
+    print("docs/index.html — rail, ecosystem grid and contact card rewritten")
     return 0
 
 
