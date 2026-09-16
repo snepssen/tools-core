@@ -422,13 +422,21 @@ def measure(stage_dir, pages, viewport):
             source.read_text(encoding="utf-8").replace(
                 "</body>", '<script src="_probe.js"></script></body>'),
             encoding="utf-8")
-        dom = subprocess.run(
-            [chrome(), "--headless=new", "--disable-gpu", "--hide-scrollbars",
-             f"--window-size={width},{height}", "--virtual-time-budget=8000",
-             "--dump-dom", f"http://127.0.0.1:{PORT}/{page['slug']}/_measure.html"],
-            capture_output=True, text=True, timeout=180).stdout
-        found = re.search(r'data-page-height="(\d+)"', dom)
-        reading = int(found.group(1)) if found else None
+        # Twice if need be: on the tallest page the dump sometimes fires
+        # before parsing has finished and comes back without the attribute,
+        # which read as "this page cannot be measured" when it simply had not
+        # been yet.
+        reading = None
+        for budget in (8000, 20000):
+            dom = subprocess.run(
+                [chrome(), "--headless=new", "--disable-gpu", "--hide-scrollbars",
+                 f"--window-size={width},{height}", f"--virtual-time-budget={budget}",
+                 "--dump-dom", f"http://127.0.0.1:{PORT}/{page['slug']}/_measure.html"],
+                capture_output=True, text=True, timeout=300).stdout
+            found = re.search(r'data-page-height="(\d+)"', dom)
+            if found:
+                reading = int(found.group(1))
+                break
         recorded = page["height"]
         if reading is None:
             note = "no reading — measure this one in a real browser"
