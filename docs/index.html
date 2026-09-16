@@ -9,16 +9,28 @@
   <meta name="description" content="The public workshop of snepssen: Gateway Forge, Voice Forge, and tools for audio, speech, media, and careful local-first software.">
   <meta name="theme-color" content="#171713">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://snepssen.github.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://snepssen.github.io; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta property="og:title" content="snepssen — software for voices, signals, and strange maps">
   <meta property="og:description" content="Local-first tools built to expose the interesting machinery instead of hiding it.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://snepssen.github.io/tools-core/">
   <title>snepssen — voices, signals, and strange maps</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..750&display=swap">
   <style>
+    /* Inter, served from this repository rather than fetched from Google:
+       the page promises no trackers and its Content-Security-Policy is
+       deliberately tight, and a webfont request to a third party is neither.
+       One variable file, 400-750, which is the range --sans uses (650 and 750
+       included). The unicode-range is Google's own for the latin subset --
+       the only subset a reader of this page would ever have downloaded --
+       so a character outside it falls back down the stack as it always did. */
+    @font-face {
+      font-family: "Inter";
+      font-style: normal;
+      font-weight: 400 750;
+      font-display: swap;
+      src: url("fonts/inter-latin.woff2") format("woff2");
+      unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+    }
     /* Dark first, because that is what this was drawn for and it is still the
        default. The light half is not an inversion — the accents cannot simply
        be reused, since every one of them is a bright colour chosen against a
