@@ -55,3 +55,7 @@ voice-corpus-rode/
 Voice-beta-rode/
 from-deck/
 media/
+
+# Screenshots from site-capture/shoot-pages.py — regenerate them, do not keep
+# them: this repository holds source only.
+/page-shots/

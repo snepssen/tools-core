@@ -18,6 +18,7 @@ third-party source trees.
 | [`gateway-authoring/`](gateway-authoring/) | Indexes measured signals, verifies a speech corpus, and seeds provisional Gateway Forge briefings | Python 3 | macOS/Linux | Yes |
 | [`piper-workflows/`](piper-workflows/) | Piper training, export, render, audition, and direct-inference wrappers for known upstream failure modes | Python 3 plus a compatible Piper training environment | Primarily macOS/Linux | Yes |
 | [`tts-research/`](tts-research/) | Produces Qwen3-TTS tensor, tokenizer, and speaking-pace ground truth | Python 3, MLX, mlx-audio, Transformers | Apple silicon macOS | Yes |
+| [`site-capture/`](site-capture/) | Photographs the workshop's project pages whole, in both themes, repeatably | Python 3 and Chrome or Chromium; Pillow to verify and trim | macOS/Linux | Yes |
 
 The karaoke and narration renderer that used to live here as
 `lyric-video-maker/` is now [Protoke](https://github.com/snepssen/protoke), its

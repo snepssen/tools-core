@@ -1,0 +1,38 @@
+{
+  "viewport": [
+    1440,
+    900
+  ],
+  "comment": [
+    "height is the page's full height in CSS pixels, measured at the viewport",
+    "width above. It is recorded rather than discovered because a page has no",
+    "single height: see the README. Re-measure with --measure when a page",
+    "changes, and check what it prints before pasting it back in here."
+  ],
+  "pages": [
+    {
+      "slug": "gateway-forge",
+      "height": 14992
+    },
+    {
+      "slug": "voice-forge",
+      "height": 10113
+    },
+    {
+      "slug": "protoke",
+      "height": 9596
+    },
+    {
+      "slug": "media-preflight",
+      "height": 18661
+    },
+    {
+      "slug": "siphon",
+      "height": 8825
+    },
+    {
+      "slug": "tools-core",
+      "height": 9189
+    }
+  ]
+}

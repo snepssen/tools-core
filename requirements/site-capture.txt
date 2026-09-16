@@ -1,0 +1,5 @@
+# Optional. site-capture/shoot-pages.py takes its screenshots without this;
+# Pillow is what checks each capture ended where the page ended, trims an
+# overshoot, and assembles the contact sheet. Without it the captures are
+# taken unverified and the script says so.
+Pillow>=10.0
