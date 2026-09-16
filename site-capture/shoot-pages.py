@@ -45,6 +45,14 @@ difference between two runs first.
     already describes the still version of itself under
     `prefers-reduced-motion`; this asks for it directly.
 
+  * **What is staged in is let through the page's own policy.** tools-core
+    sets a Content-Security-Policy, and a good one — it refuses inline
+    scripts, which is why `--measure` could never read that page and said so
+    for no visible reason. What is added is written beside the page instead,
+    so `'self'` covers it; the single clause widened is `data:` for `img-src`,
+    because the screenshots no longer arrive over the wire. Nothing is
+    removed, so anything the real page would block stays blocked.
+
 **The one thing left is the height.** The whole page is photographed by
 opening a window as tall as the page, which changes what a viewport unit
 means: tools-core's hero is `min-height: 77vh`, so in a 9192px window the hero
@@ -62,8 +70,12 @@ the page ended where it was supposed to. An overshoot is trimmed; a page that
 ran off the bottom is reported and the run exits non-zero. A wrong height is a
 message rather than a quietly wrong picture.
 
-What is left is a 163x4px strip of protoke's video controls, which is a moving
-picture and will not hold still.
+What is left is a four-pixel strip of protoke's video controls, which is a
+moving picture and will not hold still. Everything else matches byte for byte
+between runs — and that is the test, because the one bug none of this caught
+on its own was a `url()` written one directory too deep, which 404'd every
+webfont and put every page back in fallback type. Two runs agreed perfectly
+on it. Comparing runs finds races; only looking at the picture finds that.
 
 Pillow is needed for the check, the trim and the contact sheet. It is
 optional: without it the captures are still taken, unverified, and the script
@@ -133,6 +145,7 @@ def stage(root, pages, stage_dir, viewport):
             (target / "index.html").read_text(encoding="utf-8"), target)
         html = localise_fonts(html, target, stage_dir / ".fonts")
         html = inline_images(html, target)
+        html = admit_our_injections(html)
         for theme in ("dark", "light"):
             (target / f"_{theme}.html").write_text(
                 prepare(html, theme, height), encoding="utf-8")
@@ -182,7 +195,12 @@ def localise_fonts(html, target, cache):
                                                 css))):
                 local = fetch(remote, cache)
                 shutil.copy(local, fonts / local.name)
-                css = css.replace(remote, f"_fonts/{local.name}")
+                # Bare name: a url() resolves against the stylesheet, and the
+                # stylesheet is already inside _fonts/. Writing the directory
+                # in as well asks for _fonts/_fonts/… , which 404s silently
+                # and puts the page back in fallback type — the very thing
+                # this function exists to prevent, only now reproducibly.
+                css = css.replace(remote, local.name)
         except (urllib.error.URLError, OSError) as problem:
             print(f"  fonts: {target.name} keeps its remote stylesheet ({problem})",
                   file=sys.stderr)
@@ -255,6 +273,35 @@ def inline_images(html, docs):
     # poster= as well as src=: protoke's demo video shows a poster frame, and
     # left to a fetch it sometimes had not arrived when the shutter went.
     return re.sub(r'\b(src|srcset|poster)="([^"]+)"', encode, html)
+
+
+def admit_our_injections(html):
+    """Widen a page's own Content-Security-Policy to allow what is staged in.
+
+    tools-core is the only page here that carries one, and it is a good one:
+    `script-src 'self'` and an `img-src` naming the host it actually uses. It
+    is also aimed at a published page served to strangers, and what is being
+    photographed is a local copy this script has already rewritten — so the
+    policy is now describing a document that no longer exists.
+
+    Two clauses have to give, and only those two: `data:` for `img-src`,
+    because the screenshots are inlined rather than fetched, and `'self'` is
+    left to cover the probe and the fonts, which are written beside the page
+    for exactly that reason. Nothing is removed, so a resource the real page
+    would have blocked stays blocked and the capture keeps telling the truth.
+
+    This is the failure that has no symptom worth noticing: the probe was
+    being refused as an inline script, and `--measure` reported "no reading"
+    for this one page for no visible reason.
+    """
+    def widen(match):
+        policy = match.group(1)
+        if "img-src" in policy and "data:" not in policy:
+            policy = re.sub(r"(img-src[^;]*)", r"\1 data:", policy)
+        return f'<meta http-equiv="Content-Security-Policy" content="{policy}">'
+
+    return re.sub(r'<meta http-equiv="Content-Security-Policy" content="([^"]*)">',
+                  widen, html)
 
 
 def prepare(html, theme, viewport_height):
@@ -356,16 +403,25 @@ def measure(stage_dir, pages, viewport):
     why a discovered height is not to be trusted.
     """
     width, height = viewport
-    probe = ('<script>(function(){function m(){document.documentElement'
+    # An external file, not an inline <script>: tools-core's page sets
+    # script-src 'self', which refuses inline scripts outright — silently, as
+    # far as the DOM dump is concerned, so the probe simply never ran and this
+    # was the one page --measure could never read. Written beside the page, it
+    # is same-origin and allowed, and nothing has to be taken out of the
+    # policy to let it run.
+    probe = ('(function(){function m(){document.documentElement'
              '.setAttribute("data-page-height",document.documentElement.scrollHeight);}'
              'm();addEventListener("load",m);'
              'if(document.fonts&&document.fonts.ready)document.fonts.ready.then(m);'
-             'setTimeout(m,2000);})();</script>')
+             'setTimeout(m,2000);})();')
     for page in pages:
         source = stage_dir / page["slug"] / "_dark.html"
+        (stage_dir / page["slug"] / "_probe.js").write_text(probe, encoding="utf-8")
         target = stage_dir / page["slug"] / "_measure.html"
-        target.write_text(source.read_text(encoding="utf-8")
-                          .replace("</body>", probe + "</body>"), encoding="utf-8")
+        target.write_text(
+            source.read_text(encoding="utf-8").replace(
+                "</body>", '<script src="_probe.js"></script></body>'),
+            encoding="utf-8")
         dom = subprocess.run(
             [chrome(), "--headless=new", "--disable-gpu", "--hide-scrollbars",
              f"--window-size={width},{height}", "--virtual-time-budget=8000",

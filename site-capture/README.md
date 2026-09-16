@@ -44,9 +44,17 @@ the webfonts are downloaded and served locally, the images are carried in the
 page as `data:` URIs, and animations are stopped the way each stylesheet
 already defines under `prefers-reduced-motion`.
 
-The test for all of it is that two runs produce the same bytes. They do, for
-every page but protoke, where a 163x4px strip of video controls will not hold
-still.
+tools-core sets a Content-Security-Policy, so anything staged in is written
+beside the page where `'self'` covers it, and the one clause widened is
+`data:` for `img-src`. Nothing is removed from the policy: a resource the real
+page would refuse is still refused here.
+
+Two runs produce the same bytes, for every page but protoke, where a
+four-pixel strip of video controls will not hold still. That comparison is
+what catches races — but not everything. The webfonts spent a while being
+fetched to a path one directory too deep, 404ing every one of them and
+putting every page back in fallback type, and two runs agreed about it
+perfectly. Look at a heading occasionally.
 
 ## The height, and why it is written down
 
