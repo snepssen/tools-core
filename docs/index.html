@@ -9,12 +9,15 @@
   <meta name="description" content="The public workshop of snepssen: Gateway Forge, Voice Forge, and tools for audio, speech, media, and careful local-first software.">
   <meta name="theme-color" content="#171713">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://snepssen.github.io; style-src 'self' 'unsafe-inline'; script-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' https://snepssen.github.io; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'none'; media-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta property="og:title" content="snepssen — software for voices, signals, and strange maps">
   <meta property="og:description" content="Local-first tools built to expose the interesting machinery instead of hiding it.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://snepssen.github.io/tools-core/">
   <title>snepssen — voices, signals, and strange maps</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400..750&display=swap">
   <style>
     /* Dark first, because that is what this was drawn for and it is still the
        default. The light half is not an inversion — the accents cannot simply
@@ -54,7 +57,7 @@
       --max: 1180px;
       --sans: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       --serif: Iowan Old Style, Baskerville, "Times New Roman", serif;
-      --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
     }
     @media (prefers-color-scheme: light) {
       :root:not([data-theme="dark"]) {
