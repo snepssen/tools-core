@@ -46,7 +46,11 @@ def replace(html, start, end, new):
 
 def sync(html, ecosystem):
     rail = build.reindent(build.rail(ecosystem, SLUG).strip("\n"), 2)
-    html, _ = replace(html, '  <div class="ecosystem-progress"', "  </nav>\n", rail + "\n")
+    # The shared rail owns the zero-height page-top anchor as well as the
+    # progress strip. Start the replacement at that anchor so repeated syncs
+    # remain idempotent instead of leaving another anchor above each rail.
+    html, _ = replace(html, '  <span class="ecosystem-page-top"',
+                      "  </nav>\n", rail + "\n")
 
     inner = build.reindent(build.grid_inner(ecosystem, SLUG), 6)
     section = ('    <section class="ecosystem-more" aria-labelledby="ecosystem-heading"'
