@@ -15,6 +15,7 @@ third-party source trees.
 | Area | What it does | Runtime | Platform | Writes files |
 | --- | --- | --- | --- | --- |
 | [`audio-analysis/`](audio-analysis/) | Measures stereo beat layers, joins, onsets, pace, and prepares voice references | Python 3; NumPy/SciPy/soundfile for beat analysis; ffmpeg for corpus cutting | macOS/Linux | Some tools |
+| [`file-identify/`](file-identify/) | Says what a file is from its bytes: the real format, a document's own heading, when it happened, where it came from. auto-sort's identifier, kept identical to it | Python 3 standard library; uses ffprobe, exiftool and OCR when installed | macOS/Linux/Windows | No |
 | [`gateway-authoring/`](gateway-authoring/) | Indexes measured signals, verifies a speech corpus, and seeds provisional Gateway Forge briefings | Python 3 | macOS/Linux | Yes |
 | [`piper-workflows/`](piper-workflows/) | Piper training, export, render, audition, and direct-inference wrappers for known upstream failure modes | Python 3 plus a compatible Piper training environment | Primarily macOS/Linux | Yes |
 | [`tts-research/`](tts-research/) | Produces Qwen3-TTS tensor, tokenizer, and speaking-pace ground truth | Python 3, MLX, mlx-audio, Transformers | Apple silicon macOS | Yes |

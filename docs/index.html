@@ -294,8 +294,9 @@
     .tool-card .tag { color: var(--tools); font: 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .1em; }
     .tool-card h3 { margin: 38px 0 10px; font: 700 23px/1.1 var(--sans); letter-spacing: -.025em; }
     .tool-card p { min-height: 76px; margin-bottom: 20px; color: var(--muted); font-size: 14px; }
-    .tool-card .command { position: relative; padding: 15px 48px 15px 15px; background: var(--sunken); color: var(--code); overflow-x: auto; font: 12px/1.55 var(--mono); white-space: nowrap; }
-    .tool-card .command .copy { position: absolute; top: 8px; right: 8px; min-height: 30px; padding-inline: 9px; }
+    .tool-card .command { display: flex; align-items: center; gap: 12px; padding: 8px 8px 8px 15px; background: var(--sunken); color: var(--code); font: 12px/1.55 var(--mono); }
+    .tool-card .command code { flex: 1; min-width: 0; overflow-x: auto; white-space: nowrap; padding-block: 7px; }
+    .tool-card .command .copy { flex: none; min-height: 30px; padding-inline: 9px; }
     .tool-card .readme { display: inline-block; margin-top: 18px; color: var(--tools); font: 700 12px/1 var(--sans); text-underline-offset: 4px; }
 
     .labs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
@@ -588,7 +589,7 @@
             <div class="project-copy">
               <span class="project-no">07 / FIELD TOOLS</span>
               <h3>tools-core</h3>
-              <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, and Qwen3-TTS truth probes.</p>
+              <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, Qwen3-TTS truth probes, and auto-sort&rsquo;s file identifier on its own.</p>
               <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
               <div class="project-actions">
                 <a class="button" href="#tools">Open the toolbox</a>
@@ -596,7 +597,7 @@
               </div>
             </div>
             <div class="project-media tools-plate" aria-label="tools-core directory map">
-              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── site-capture/<br>├── site-fonts/<br>└── tts-research/</div>
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── site-capture/<br>├── site-fonts/<br>└── tts-research/</div>
             </div>
           </article>
         </div>
@@ -623,6 +624,7 @@
           <button class="filter" type="button" data-filter="audio" aria-pressed="false">Audio</button>
           <button class="filter" type="button" data-filter="speech" aria-pressed="false">Speech</button>
           <button class="filter" type="button" data-filter="gateway" aria-pressed="false">Gateway</button>
+          <button class="filter" type="button" data-filter="files" aria-pressed="false">Files</button>
         </div>
 
         <div class="tool-grid" aria-live="polite">
@@ -664,6 +666,14 @@
             <p>Index evidence, convert measured signals into playable profiles, verify corpus labels, and safely preview provisional briefings.</p>
             <div class="command"><code>python3 gateway-authoring/seed-briefings.py PATH --dry-run</code><button class="copy" type="button" data-copy="python3 gateway-authoring/seed-briefings.py PATH --dry-run" aria-label="Copy briefing preview command">Copy</button></div>
             <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/gateway-authoring">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="files">
+            <span class="tag">Files / from auto-sort</span>
+            <h3>File identifier</h3>
+            <p>Say what a file is from its bytes, not its name: the real format when the extension lies, the heading a document gives itself, when it happened and where it came from. auto-sort&rsquo;s own identifier, unchanged, and it never writes.</p>
+            <div class="command"><code>python3 file-identify/identify-file.py FILE --facts</code><button class="copy" type="button" data-copy="python3 file-identify/identify-file.py FILE --facts" aria-label="Copy file identifier command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/file-identify">Instructions ↗</a>
           </article>
         </div>
       </div>
