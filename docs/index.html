@@ -249,7 +249,7 @@
     .tool-tree { width: min(100%, 520px); font: 13px/1.9 var(--mono); color: var(--faint); }
     .tool-tree b { color: var(--tools); font-weight: 500; }
     .face-plate { width: min(100%, 520px); font: 13px/2.4 var(--mono); color: var(--faint); }
-    .face-plate span { display: inline-block; min-width: 6.5em; }
+    .face-plate span { display: inline-block; min-width: 6.5em; margin-right: 1.5ch; }
     .face-plate b { color: var(--tools); font-weight: 500; font-size: 15px; }
     .tool-tree strong { color: var(--chalk); font-weight: 500; }
 
@@ -329,7 +329,7 @@
     .beat-readout { color: var(--muted); font: 11px/1.5 var(--mono); }
 
     .principles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; border: 1px solid var(--line); background: var(--line); }
-    .principle { background: var(--paper); color: var(--ink); padding: 28px; }
+    .principle { background: var(--surface); color: var(--chalk); padding: 28px; }
     .principle .n { color: var(--whisper); font: 11px/1 var(--mono); }
     .principle h3 { margin: 52px 0 10px; font: 700 22px/1.1 var(--sans); letter-spacing: -.025em; }
     .principle p { margin: 0; color: var(--body); font-size: 14px; }
@@ -483,7 +483,7 @@
       <div class="wrap">
         <div class="section-head">
           <div>
-            <p class="eyebrow">Five public projects</p>
+            <p class="eyebrow">Seven public projects</p>
             <h2>The workbench</h2>
           </div>
           <p class="section-copy">Each project has its own repository and field notes. The apps stay local; the measurements, trade-offs, and failures are left visible.</p>
@@ -571,7 +571,22 @@
           </article>
           <article class="project tools">
             <div class="project-copy">
-              <span class="project-no">06 / FIELD TOOLS</span>
+              <span class="project-no">06 / FILING</span>
+              <h3>auto-sort</h3>
+              <p>Empties a Downloads folder and keeps it empty. It works out what each file is from its bytes rather than its name, reads what documents call themselves, and once three of them share a heading they get a folder of their own. When it learns something new it goes back over what it already filed. Every move is written down and can be undone, and nothing is ever deleted: what goes, goes to the bin.</p>
+              <div class="project-meta">Python standard library · macOS, Linux, Windows · MIT</div>
+              <div class="project-actions">
+                <a class="button" href="https://snepssen.github.io/auto-sort/">Visit project</a>
+                <a class="button ghost" href="https://github.com/snepssen/auto-sort">GitHub</a>
+              </div>
+            </div>
+            <div class="project-media tools-plate" aria-label="Where files went, as the auto-sort ledger shows it">
+              <div class="face-plate"><span><b>&#x2713;</b> scan.pdf</span><span>&#x27f6; Scans/2026</span><span>read, not named</span><br><span><b>&#x2713;</b> 3 invoices</span><span>&#x27f6; new folder</span><span>learnt</span><br><span><b>&#x26a0;</b> encrypted</span><span>set aside</span><span><b>&#x21b6;</b> undo any move</span></div>
+            </div>
+          </article>
+          <article class="project tools">
+            <div class="project-copy">
+              <span class="project-no">07 / FIELD TOOLS</span>
               <h3>tools-core</h3>
               <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, and Qwen3-TTS truth probes.</p>
               <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
@@ -581,7 +596,7 @@
               </div>
             </div>
             <div class="project-media tools-plate" aria-label="tools-core directory map">
-              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── gateway-authoring/<br>├── piper-workflows/<br>└── tts-research/</div>
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── site-capture/<br>├── site-fonts/<br>└── tts-research/</div>
             </div>
           </article>
         </div>

@@ -57,6 +57,10 @@ hardware being investigated.
 - [Media Preflight](https://snepssen.github.io/media-preflight/) — check a
   finished file against a delivery target, and correct it without touching
   the original.
+- [siphon](https://snepssen.github.io/siphon/) — fetch from a link, or
+  convert what you already have, without re-encoding what it does not have to.
+- [auto-sort](https://snepssen.github.io/auto-sort/) — empty the Downloads
+  folder into structure it learns from what the files are, and undo any of it.
 - [tools-core](https://snepssen.github.io/tools-core/) — this repository.
 
 ## Privacy and scope
