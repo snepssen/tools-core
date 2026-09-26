@@ -590,7 +590,7 @@
             <div class="project-copy">
               <span class="project-no">07 / FIELD TOOLS</span>
               <h3>tools-core</h3>
-              <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, Qwen3-TTS truth probes, and two parts of auto-sort on their own: its file identifier and its tray icon.</p>
+              <p>The useful pieces that fell out of the larger work: caption checks, media repackaging, file identification, duplicate finding, asset grouping and tray icons, alongside audio forensics, corpus preparation and voice research.</p>
               <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
               <div class="project-actions">
                 <a class="button" href="#tools">Open the toolbox</a>
@@ -598,7 +598,7 @@
               </div>
             </div>
             <div class="project-media tools-plate" aria-label="tools-core directory map">
-              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── site-capture/<br>├── site-fonts/<br>├── tray-icon/<br>└── tts-research/</div>
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── bundle-list/<br>├── caption-check/<br>├── exact-duplicates/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── remux/<br>├── site-capture/<br>├── site-fonts/<br>├── tray-icon/<br>└── tts-research/</div>
             </div>
           </article>
         </div>
@@ -623,6 +623,7 @@
         <div class="filters" role="group" aria-label="Filter tools">
           <button class="filter" type="button" data-filter="all" aria-pressed="true">Everything</button>
           <button class="filter" type="button" data-filter="audio" aria-pressed="false">Audio</button>
+          <button class="filter" type="button" data-filter="media" aria-pressed="false">Media</button>
           <button class="filter" type="button" data-filter="speech" aria-pressed="false">Speech</button>
           <button class="filter" type="button" data-filter="gateway" aria-pressed="false">Gateway</button>
           <button class="filter" type="button" data-filter="files" aria-pressed="false">Files</button>
@@ -630,6 +631,38 @@
         </div>
 
         <div class="tool-grid" aria-live="polite">
+          <article class="tool-card" data-kind="media" id="caption-check">
+            <span class="tag">Captions / from Media Preflight</span>
+            <h3>Caption Check</h3>
+            <p>Find subtitle cues that are too fast, too long, overlap in the same position or run past the end. Check SRT, VTT and ASS locally, with the exact times and configurable thresholds.</p>
+            <div class="command"><code>python3 caption-check/caption-check.py subtitles.srt</code><button class="copy" type="button" data-copy="python3 caption-check/caption-check.py subtitles.srt" aria-label="Copy Caption Check command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/caption-check">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="media audio" id="remux">
+            <span class="tag">Media / from siphon</span>
+            <h3>Remux</h3>
+            <p>Put a recording in another container without re-encoding. Every supported track is copied; an incompatible track stops the operation. Preview the decision, then write a new file.</p>
+            <div class="command"><code>python3 remux/remux.py recording.mp4 recording.mkv --plan</code><button class="copy" type="button" data-copy="python3 remux/remux.py recording.mp4 recording.mkv --plan" aria-label="Copy Remux preview command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/remux">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="files" id="exact-duplicates">
+            <span class="tag">Files / from auto-sort</span>
+            <h3>Exact Duplicates</h3>
+            <p>Find files with identical bytes across folders. See every copy and its logical size, with hard links counted once. Nothing is deleted, moved or chosen for you.</p>
+            <div class="command"><code>python3 exact-duplicates/exact-duplicates.py ~/Downloads</code><button class="copy" type="button" data-copy="python3 exact-duplicates/exact-duplicates.py ~/Downloads" aria-label="Copy Exact Duplicates command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/exact-duplicates">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="files media" id="bundle-list">
+            <span class="tag">Files / from auto-sort</span>
+            <h3>Bundle List</h3>
+            <p>See which files belong together: a film and its subtitles, a RAW/JPEG pair, a model and its sidecars, or a sequence of frames. Read the groups or export a JSON listing.</p>
+            <div class="command"><code>python3 bundle-list/bundle-list.py ./assets --groups-only</code><button class="copy" type="button" data-copy="python3 bundle-list/bundle-list.py ./assets --groups-only" aria-label="Copy Bundle List command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/bundle-list">Instructions ↗</a>
+          </article>
+
           <article class="tool-card" data-kind="audio">
             <span class="tag">Audio / measurement</span>
             <h3>Beat analyser</h3>

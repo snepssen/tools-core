@@ -6,8 +6,8 @@
     python3 scripts/from-auto-sort.py --check --from ~/code/auto-sort
     python3 scripts/from-auto-sort.py --check --only tray-icon
 
-Two tools here are auto-sort's code run on its own, not rewrites of it:
-file-identify (what a file is) and tray-icon (an icon with a menu). Each
+These tools are auto-sort's code run on its own, not rewrites of it:
+file-identify, tray-icon, exact-duplicates and bundle-list. Each
 has an `engine/` holding auto-sort's modules, copied unchanged, with
 `engine/MANIFEST.json` naming the auto-sort commit they came from and the
 hash of every file. A copy that is edited here drifts, and the next fix in
@@ -46,6 +46,9 @@ ENGINES = {
     # The tray, the D-Bus wire protocol its Linux icon speaks, and the
     # declared Win32 signatures its Windows icon calls through.
     "tray-icon": (("tray", "dbuswire", "winapi"), False),
+    "bundle-list": (("bundles", "kinds"), False),
+    "exact-duplicates": (("duplicates", "bundles", "kinds", "mover",
+                           "paths", "userdirs", "winapi"), False),
 }
 
 

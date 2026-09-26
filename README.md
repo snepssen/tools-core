@@ -15,9 +15,13 @@ third-party source trees.
 | Area | What it does | Runtime | Platform | Writes files |
 | --- | --- | --- | --- | --- |
 | [`audio-analysis/`](audio-analysis/) | Measures stereo beat layers, joins, onsets, pace, and prepares voice references | Python 3; NumPy/SciPy/soundfile for beat analysis; ffmpeg for corpus cutting | macOS/Linux | Some tools |
+| [`bundle-list/`](bundle-list/) | Lists the files belonging to one asset: sidecars, photo pairs, multipart archives and frame sequences | Python 3.8+, standard library | macOS verified; Windows/Linux unverified | No |
+| [`caption-check/`](caption-check/) | Finds subtitle timing and readability problems, with exact cues to inspect | Python 3.8+, standard library; optional fontconfig | macOS verified; Windows/Linux unverified | No |
+| [`exact-duplicates/`](exact-duplicates/) | Finds byte-identical copies across folders, accounting for overlapping roots and hard links | Python 3.8+, standard library | macOS verified; Windows/Linux unverified | No |
 | [`file-identify/`](file-identify/) | Says what a file is from its bytes: the real format, a document's own heading, when it happened, where it came from. auto-sort's identifier, kept identical to it | Python 3 standard library; uses ffprobe, exiftool and OCR when installed | macOS/Linux/Windows | No |
 | [`gateway-authoring/`](gateway-authoring/) | Indexes measured signals, verifies a speech corpus, and seeds provisional Gateway Forge briefings | Python 3 | macOS/Linux | Yes |
 | [`piper-workflows/`](piper-workflows/) | Piper training, export, render, audition, and direct-inference wrappers for known upstream failure modes | Python 3 plus a compatible Piper training environment | Primarily macOS/Linux | Yes |
+| [`remux/`](remux/) | Changes a media container by copying every supported stream; refuses encoding or track removal | Python 3.8+, FFmpeg and ffprobe | macOS verified; Windows/Linux unverified | A new copy |
 | [`tray-icon/`](tray-icon/) | Puts an icon with a menu in the menu bar, notification area or panel, each entry running a command. auto-sort's tray, kept identical to it | Python 3 standard library | macOS/Linux (seen); Windows (built to the documentation, not yet seen) | No |
 | [`tts-research/`](tts-research/) | Produces Qwen3-TTS tensor, tokenizer, and speaking-pace ground truth | Python 3, MLX, mlx-audio, Transformers | Apple silicon macOS | Yes |
 | [`site-capture/`](site-capture/) | Photographs the workshop's project pages whole, in both themes, repeatably | Python 3 and Chrome or Chromium; Pillow to verify and trim | macOS/Linux | Yes |
@@ -40,6 +44,12 @@ python3 scripts/check_release.py
 The check compiles every Python file, validates shell syntax, runs the standard
 library tests, and rejects private absolute paths, likely secrets, generated
 media, model artifacts, caches, and unexpectedly large files.
+
+Extracted engines retain their upstream code and source-hash manifests.
+The release tests check these with `scripts/from-auto-sort.py --check` and
+`scripts/from-projects.py --check`. Fix engine code in its parent project,
+then use the relevant copy script; see each tool's README. Remux integration
+tests exercise real multi-track media when FFmpeg and ffprobe are installed.
 
 ## Dependency setup
 

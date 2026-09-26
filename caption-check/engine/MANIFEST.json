@@ -1,0 +1,9 @@
+{
+  "commit": "4bd70e113acae9354d5a5228f1da5f49b13b341c",
+  "files": {
+    "captions.py": "b99b29d7301366a95033d986081430bdaf6bb0990506c401340c95f38c7c4dff",
+    "platform_support.py": "fea1f37db6ca0de88d3cf0de1d37236e47418e410c11bb6ea8318ecc569e33eb"
+  },
+  "from": "https://github.com/snepssen/media-preflight",
+  "version": "0.2.0"
+}

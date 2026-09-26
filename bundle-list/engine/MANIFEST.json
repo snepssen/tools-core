@@ -1,0 +1,9 @@
+{
+  "commit": "19bc5de43fd3398fcc75b98649dc490cafe8db87",
+  "files": {
+    "bundles.py": "4989a6b990de15e1e6505957eed92ae5934ba95997e4820049522dbd25508276",
+    "kinds.py": "f856295cf61ea63ec93ef6bfc19f1f5d9ecaa73fcf36cbe5c8df92e6ff96ce75"
+  },
+  "from": "https://github.com/snepssen/auto-sort",
+  "version": "0.9.0"
+}

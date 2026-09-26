@@ -1,0 +1,14 @@
+{
+  "commit": "19bc5de43fd3398fcc75b98649dc490cafe8db87",
+  "files": {
+    "bundles.py": "4989a6b990de15e1e6505957eed92ae5934ba95997e4820049522dbd25508276",
+    "duplicates.py": "4185f06afb020d475dad3a84d7c1ef7fa100de8d2f00479c67d90865056497cc",
+    "kinds.py": "f856295cf61ea63ec93ef6bfc19f1f5d9ecaa73fcf36cbe5c8df92e6ff96ce75",
+    "mover.py": "c684b8537edd5b307d6eaf72edfc902faccbf4cecb31ed73ff544c6a17a34516",
+    "paths.py": "dd7e1a09c3b7be296ac5d2c4e6dabfb70122012ca03f13a77af26fb4d8db61a8",
+    "userdirs.py": "1ccec538a42f7ef7aeccfff15a506a8e6ab75ee863404ba0cf88101cd454e6e0",
+    "winapi.py": "2981f22ccd842bca9f780bb2161f397fb363e6d5ceb16f451e2786595b4d2218"
+  },
+  "from": "https://github.com/snepssen/auto-sort",
+  "version": "0.9.0"
+}

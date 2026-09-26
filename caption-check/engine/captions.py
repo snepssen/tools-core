@@ -1,0 +1,694 @@
+"""Reading the captions, and the ways they go wrong.
+
+Three formats, because between them they are almost everything anybody
+delivers: SubRip, WebVTT, and Advanced SubStation. They are parsed here rather
+than rendered, because every fault worth catching before delivery — cues that
+overlap, cues nobody can read in the time given, lines too long for the frame,
+a font the machine does not have — is visible in the file itself.
+
+What is *not* here is a judgement about wording, translation, or whether a
+caption is a good caption. This module counts and measures. The thresholds
+belong to the target, and reasonable people set them differently.
+
+On reading speed
+----------------
+Characters per second is the measure most subtitling guidance is written in,
+and it is a proxy: it knows nothing about vocabulary, language, or who is
+watching. Seventeen characters a second is comfortable for most adult viewers
+in English and far too fast for a child's programme. The number lives in the
+profile, where it can be argued with, and the report says which number it used.
+"""
+
+from __future__ import annotations
+
+import os
+import re
+import shutil
+import subprocess
+
+import platform_support
+
+SIDECAR_EXTENSIONS = ("srt", "vtt", "ass", "ssa")
+
+# ASS override blocks, HTML-ish tags, and the two ways a line break is written.
+_ASS_OVERRIDE = re.compile(r"\{[^}]*\}")
+_ASS_DRAWING = re.compile(r"\\p[1-9].*?\\p0", re.S)
+_TAG = re.compile(r"</?[a-zA-Z][^>]*>")
+_ASS_FONT = re.compile(r"\\fn([^\\{}]+)")
+_ASS_POS = re.compile(r"\\(?:pos|move)\(([^)]*)\)")
+_ASS_ALIGN = re.compile(r"\\an?(\d+)")
+_VTT_TIME = re.compile(
+    r"(\d{1,3}):(\d{2}):(\d{2})[.,](\d{1,3})|(\d{1,3}):(\d{2})[.,](\d{1,3})")
+
+
+class CaptionError(RuntimeError):
+    """The caption file could not be read, with the reason."""
+
+
+# ------------------------------------------------------------------ finding
+
+def find(media_path, facts=None, explicit=None, ffmpeg=None):
+    """Locate captions for a media file. Returns a track dict, or None.
+
+    An explicit path wins. Otherwise a sidecar beside the media is preferred
+    over an embedded stream, because a sidecar is the file that will actually
+    be delivered alongside it — and if both exist and disagree, the one on disk
+    is the one somebody edited last.
+    """
+    if explicit:
+        if not os.path.isfile(explicit):
+            raise CaptionError(f"No such caption file: {explicit}")
+        return load(explicit)
+
+    stem = os.path.splitext(media_path)[0]
+    for extension in SIDECAR_EXTENSIONS:
+        candidate = f"{stem}.{extension}"
+        if os.path.isfile(candidate):
+            return load(candidate)
+
+    if facts and facts.get("subtitle_streams"):
+        return extract(media_path, facts["subtitle_streams"][0], ffmpeg)
+    return None
+
+
+def load(path):
+    """Read a caption file, choosing the parser by what is inside it."""
+    try:
+        with open(path, "r", encoding="utf-8-sig", errors="replace") as handle:
+            text = handle.read()
+    except OSError as error:
+        raise CaptionError(f"Could not read {os.path.basename(path)}: {error}")
+    track = parse(text, os.path.splitext(path)[1].lstrip(".").lower())
+    track["source"] = path
+    track["origin"] = "sidecar"
+    return track
+
+
+def extract(media_path, stream, ffmpeg=None):
+    """Pull an embedded subtitle stream out as ASS, which keeps its styling."""
+    if ffmpeg is None:
+        ffmpeg, _ = platform_support.require_tools()
+    # Bitmap subtitles (PGS, VobSub) are pictures, not text; there is nothing
+    # here to measure and saying so is better than emitting an empty track.
+    if stream.get("codec") in ("hdmv_pgs_subtitle", "dvd_subtitle", "dvb_subtitle"):
+        return {"cues": [], "format": stream.get("codec"), "fonts": [],
+                "origin": "embedded", "source": media_path,
+                "unreadable": "These are picture subtitles, not text — there "
+                              "is nothing in them to measure."}
+    index = stream.get("index", 0)
+    try:
+        result = subprocess.run(
+            [ffmpeg, "-hide_banner", "-v", "error", "-i", media_path,
+             "-map", f"0:{index}", "-f", "ass", "-"],
+            capture_output=True, text=True, timeout=300,
+            **platform_support.no_console())
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise CaptionError(f"Could not extract the subtitle stream: {error}")
+    if result.returncode != 0 or not result.stdout.strip():
+        return None
+    track = parse(result.stdout, "ass")
+    track["source"] = f"{os.path.basename(media_path)} (stream {index})"
+    track["origin"] = "embedded"
+    return track
+
+
+# ------------------------------------------------------------------ parsing
+
+def parse(text, hint=""):
+    """Parse SRT, WebVTT or ASS. The hint is the file extension, if there was one."""
+    head = text.lstrip()[:200].upper()
+    if "[SCRIPT INFO]" in head or "[V4" in head or hint in ("ass", "ssa"):
+        return parse_ass(text)
+    if head.startswith("WEBVTT") or hint == "vtt":
+        return parse_vtt(text)
+    return parse_srt(text)
+
+
+def _timestamp(value):
+    """Any of the three ways these formats write a time, as seconds."""
+    value = value.strip()
+    found = _VTT_TIME.search(value)
+    if not found:
+        return None
+    if found.group(1) is not None:
+        hours, minutes, seconds, fraction = found.group(1, 2, 3, 4)
+    else:
+        hours, minutes, seconds, fraction = "0", *found.group(5, 6, 7)
+    fraction = (fraction + "00")[:3]
+    return (int(hours) * 3600 + int(minutes) * 60 + int(seconds)
+            + int(fraction) / 1000.0)
+
+
+def parse_srt(text):
+    cues = []
+    for block in re.split(r"\r?\n\s*\r?\n", text.strip()):
+        lines = [l for l in block.splitlines() if l.strip() != ""]
+        if not lines:
+            continue
+        timing = next((i for i, l in enumerate(lines) if "-->" in l), None)
+        if timing is None:
+            continue
+        start, _, end = lines[timing].partition("-->")
+        body = lines[timing + 1:]
+        cues.append(_cue(len(cues) + 1, _timestamp(start), _timestamp(end),
+                         "\n".join(body)))
+    return {"cues": [c for c in cues if c], "format": "srt", "fonts": []}
+
+
+def parse_vtt(text):
+    cues = []
+    for block in re.split(r"\r?\n\s*\r?\n", text.strip()):
+        lines = [l for l in block.splitlines() if l.strip() != ""]
+        if not lines:
+            continue
+        first = lines[0].strip().upper()
+        # WEBVTT headers, comments and style blocks are not cues.
+        if first.startswith(("WEBVTT", "NOTE", "STYLE", "REGION")):
+            continue
+        timing = next((i for i, l in enumerate(lines) if "-->" in l), None)
+        if timing is None:
+            continue
+        start, _, rest = lines[timing].partition("-->")
+        # Cue settings (line:, align:, position:) follow the end time.
+        end = rest.strip().split()[0] if rest.strip() else ""
+        cues.append(_cue(len(cues) + 1, _timestamp(start), _timestamp(end),
+                         "\n".join(lines[timing + 1:])))
+    return {"cues": [c for c in cues if c], "format": "vtt", "fonts": []}
+
+
+def parse_ass(text):
+    """Parse an ASS/SSA events section, honouring its own Format line.
+
+    The field order is declared by the file, not fixed by the format: a
+    perfectly valid script may omit Effect, and assuming the usual ten fields
+    then reads part of the positioning override as the caption text. Text is
+    always the last field and may contain commas, so it is split off by count
+    once the header has said how many fields precede it.
+    """
+    cues, fonts = [], set()
+    fields_order = ["Layer", "Start", "End", "Style", "Name", "MarginL",
+                    "MarginR", "MarginV", "Effect", "Text"]
+    in_events = False
+
+    for raw in text.splitlines():
+        line = raw.strip()
+        lowered = line.lower()
+        if line.startswith("["):
+            in_events = lowered.startswith("[events")
+            continue
+        if lowered.startswith("style:"):
+            parts = line.split(":", 1)[1].split(",")
+            if len(parts) > 1 and parts[1].strip():
+                fonts.add(parts[1].strip())
+            continue
+        if in_events and lowered.startswith("format:"):
+            named = [part.strip() for part in line.split(":", 1)[1].split(",")]
+            if "Text" in named:
+                fields_order = named
+            continue
+        if not lowered.startswith("dialogue:"):
+            continue
+
+        values = line.split(":", 1)[1].split(",", len(fields_order) - 1)
+        if len(values) < len(fields_order):
+            continue
+        row = dict(zip(fields_order, values))
+        body = row.get("Text", "")
+        fonts.update(_ASS_FONT.findall(body))
+        cue = _cue(len(cues) + 1, _timestamp(row.get("Start")),
+                   _timestamp(row.get("End")), body,
+                   slot=_slot(row.get("Layer"), row.get("Style"), body),
+                   place=_place(row.get("Layer"), body))
+        if cue:
+            cues.append(cue)
+
+    # Dialogue lines are not required to be in time order, and a file where
+    # they are not would otherwise report every cue as overlapping the last.
+    cues = sorted(cues, key=lambda c: c["start"])
+    for index, cue in enumerate(cues, 1):
+        cue["index"] = index
+    return {"cues": cues, "format": "ass", "fonts": sorted(fonts)}
+
+
+def _slot(layer, style, body):
+    """Where on screen a cue is drawn, as far as its own markup says.
+
+    SubRip and WebVTT have one caption area and two cues in it at once is an
+    error. Advanced SubStation does not: a cue carries a layer, a style and
+    often an explicit position, and putting two of them on screen together is
+    how karaoke shows the line being sung above the line coming next, and how
+    a sign is translated without covering the dialogue. Cues that differ here
+    are designed to coexist, and calling that an overlap would be reporting
+    the format working as intended.
+    """
+    return "|".join([(style or "").strip(), _place(layer, body)])
+
+
+def _place(layer, body):
+    """Where on screen, ignoring which style is painting it.
+
+    `_slot` includes the style because two styles in one place are two things
+    coexisting, which is what an overlap test needs to know. A *reading* needs
+    the opposite: a karaoke line changes style when the singing moves on —
+    Active to Inactive — while sitting in exactly the same place. Keyed on the
+    slot it looks like the line left and a different line arrived; keyed on
+    the place it is what it looks like on screen, which is one line staying
+    put.
+    """
+    position = _ASS_POS.search(body)
+    align = _ASS_ALIGN.search(body)
+    return "|".join([
+        (layer or "0").strip(),
+        position.group(1).strip() if position else "",
+        align.group(1) if align else "",
+    ])
+
+
+def _cue(index, start, end, body, slot="", place=""):
+    if start is None or end is None:
+        return None
+    text = clean(body)
+    lines = [l for l in text.split("\n") if l.strip() != ""]
+    duration = end - start
+    characters = len(text.replace("\n", " ").strip())
+    return {
+        "index": index,
+        "slot": slot,
+        "place": place,
+        "start": start,
+        "end": end,
+        "duration": duration,
+        "text": text,
+        "lines": lines,
+        "line_count": len(lines),
+        "longest_line": max((len(l) for l in lines), default=0),
+        "characters": characters,
+        # A cue of zero length would divide by zero, and a reading speed for a
+        # cue nobody can see is not a meaningful number anyway.
+        "cps": (characters / duration) if duration > 0 else None,
+    }
+
+
+def displays(cues):
+    """Runs of cues showing the same text in the same place, as one reading.
+
+    Karaoke does not re-write the line for each syllable, it repaints it. A
+    lyric video's file holds the whole line once per highlight step:
+
+        0:00.00 - 0:00.16  Close your eyes
+        0:00.16 - 0:00.56  Close your eyes     (Close lit)
+        0:00.56 - 0:00.80  Close your eyes     (your lit)
+        0:00.80 - 0:02.32  Close your eyes     (eyes lit)
+
+    Every one of those is the same fifteen characters, and a reader had the
+    whole 2.32 seconds to read them. Measured per cue it is four separate
+    subtitles, one of which flashes fifteen characters up for 0.16 s — which
+    is how a perfectly ordinary lyric video reported 360 characters a second
+    and a shortest cue of 0.05 s. Both numbers were about the animation, not
+    about anything anybody had to read.
+
+    `clean` has already removed the override tags that differ, so the repaints
+    are textually identical by the time they arrive here. A genuine
+    re-display — the same line appearing again after a gap — is not merged,
+    because that really is something to read twice.
+    """
+    # Tracked per place rather than against the previous cue: a lyric video
+    # interleaves the two lines it shows, so the cue before any given repaint
+    # belongs to the other line.
+    out, open_at = [], {}
+    for cue in cues or []:
+        key = (cue.get("place", ""), cue["text"])
+        last = open_at.get(key)
+        # Contiguous, or overlapping. A real gap means it left the screen and
+        # came back, which is something to read twice.
+        if last is not None and cue["start"] <= last["end"] + _REPAINT_GAP_S:
+            last["end"] = max(last["end"], cue["end"])
+            last["duration"] = last["end"] - last["start"]
+            last["cps"] = (last["characters"] / last["duration"]
+                           if last["duration"] > 0 else None)
+            last["span"] += 1
+            continue
+        fresh = dict(cue, span=1)
+        out.append(fresh)
+        open_at[key] = fresh
+    return out
+
+
+# Frame-accurate repaints can round apart by a hundredth of a second, which
+# should not count as the line leaving the screen and coming back.
+_REPAINT_GAP_S = 0.05
+
+
+def clean(body):
+    """Strip the markup, keep the words and the line breaks."""
+    text = _ASS_DRAWING.sub("", body)
+    text = _ASS_OVERRIDE.sub("", text)
+    text = re.sub(r"\\[Nn]", "\n", text)
+    text = _TAG.sub("", text)
+    text = text.replace("\\h", " ")
+    return "\n".join(line.strip() for line in text.split("\n")).strip()
+
+
+# ---------------------------------------------------------------- measuring
+
+def measure(track, duration_s=None):
+    """Turn a parsed track into the numbers the rules are written against."""
+    cues = track.get("cues") or []
+    out = {
+        "caption_format": track.get("format"),
+        "caption_source": track.get("source"),
+        "caption_origin": track.get("origin"),
+        "caption_cue_count": len(cues),
+        "cues": cues,
+    }
+    if track.get("unreadable"):
+        out["caption_unreadable"] = track["unreadable"]
+        return out
+    if not cues:
+        return out
+
+    # Overlap is judged within a rendering slot, not across the whole file:
+    # two cues drawn in different places at the same time are not overlapping,
+    # they are a layout.
+    overlaps, gaps = [], []
+    slots = {}
+    for cue in cues:
+        slots.setdefault(cue.get("slot", ""), []).append(cue)
+    for slot_cues in slots.values():
+        previous = None
+        for cue in slot_cues:
+            if previous is not None:
+                gap = cue["start"] - previous["end"]
+                if gap < 0:
+                    overlaps.append({
+                        "start": cue["start"], "end": previous["end"],
+                        "duration": -gap,
+                        "detail": f"cue {cue['index']} starts {-gap:.2f} s "
+                                  f"before cue {previous['index']} ends"})
+                else:
+                    gaps.append(gap)
+            previous = cue
+    overlaps.sort(key=lambda item: item["start"])
+
+    shown = displays(cues)
+    speeds = [c["cps"] for c in shown if c["cps"] is not None]
+    past_end = 0.0
+    if duration_s:
+        # A cue that *starts* after the last frame is past the end even when
+        # its own timing is backwards and its end is earlier than its start.
+        past_end = max((max(c["start"], c["end"]) - duration_s for c in cues),
+                       default=0.0)
+
+    out.update({
+        "caption_overlaps": len(overlaps),
+        "caption_overlap_intervals": overlaps,
+        "caption_shortest_cue_s": round(min(c["duration"] for c in shown), 3),
+        "caption_longest_cue_s": round(max(c["duration"] for c in shown), 3),
+        "displays": shown,
+        "caption_max_cps": round(max(speeds), 2) if speeds else None,
+        "caption_max_line_length": max(c["longest_line"] for c in cues),
+        "caption_max_lines": max(c["line_count"] for c in cues),
+        "caption_shortest_gap_s": round(min(gaps), 3) if gaps else None,
+        "caption_past_end_s": round(max(0.0, past_end), 3),
+        "caption_empty_cues": sum(1 for c in cues if not c["text"]),
+        "caption_bad_timing": sum(1 for c in cues if c["duration"] <= 0),
+        "caption_fonts": track.get("fonts") or [],
+    })
+    missing = missing_fonts(track.get("fonts") or [])
+    out["caption_missing_fonts"] = None if missing is None else len(missing)
+    out["caption_missing_font_names"] = missing or []
+    return out
+
+
+# A cue-level fault is located by the cues that cause it, and which cues those
+# are depends on the rule's own threshold — so the test lives here, next to the
+# thing it is testing, and checks.py asks for it by metric name.
+OFFENDERS = {
+    "caption_max_cps":
+        lambda cue, rule: cue["cps"] is not None
+        and rule.get("max") is not None and cue["cps"] > rule["max"],
+    "caption_max_line_length":
+        lambda cue, rule: rule.get("max") is not None
+        and cue["longest_line"] > rule["max"],
+    "caption_max_lines":
+        lambda cue, rule: rule.get("max") is not None
+        and cue["line_count"] > rule["max"],
+    "caption_shortest_cue_s":
+        lambda cue, rule: rule.get("min") is not None
+        and cue["duration"] < rule["min"],
+    "caption_longest_cue_s":
+        lambda cue, rule: rule.get("max") is not None
+        and cue["duration"] > rule["max"],
+    "caption_empty_cues": lambda cue, rule: not cue["text"],
+    "caption_bad_timing": lambda cue, rule: cue["duration"] <= 0,
+}
+
+def _which(cue):
+    """One cue, or the run of repaints that were read as one."""
+    span = cue.get("span", 1)
+    if span <= 1:
+        return f"cue {cue['index']}"
+    return f"cues {cue['index']}-{cue['index'] + span - 1}"
+
+
+DETAIL = {
+    "caption_max_cps": lambda cue: f"{_which(cue)}, "
+                                   f"{cue['cps']:.1f} characters a second",
+    "caption_max_line_length": lambda cue: f"cue {cue['index']}, "
+                                           f"{cue['longest_line']} characters",
+    "caption_max_lines": lambda cue: f"cue {cue['index']}, "
+                                     f"{cue['line_count']} lines",
+    "caption_shortest_cue_s": lambda cue: f"{_which(cue)}, "
+                                          f"{cue['duration']:.2f} s",
+    "caption_longest_cue_s": lambda cue: f"{_which(cue)}, "
+                                         f"{cue['duration']:.2f} s",
+    "caption_empty_cues": lambda cue: f"cue {cue['index']} is empty",
+    "caption_bad_timing": lambda cue: f"cue {cue['index']} ends before it starts",
+}
+
+
+# Measured over displays rather than cues, so the offenders must be too:
+# naming cue 3 for a reading speed computed across cues 1-4 would point at a
+# number the report does not show anywhere.
+BY_DISPLAY = {"caption_max_cps", "caption_shortest_cue_s",
+              "caption_longest_cue_s"}
+
+
+def offending_cues(metric, rule, cues, limit=200, shown=None):
+    """The cues that break one rule, as intervals the report can print."""
+    if metric in BY_DISPLAY:
+        cues = shown if shown is not None else displays(cues)
+    test = OFFENDERS.get(metric)
+    if test is None:
+        return []
+    describe = DETAIL.get(metric, lambda cue: f"cue {cue['index']}")
+    out = []
+    for cue in cues or []:
+        if test(cue, rule):
+            out.append({"start": cue["start"], "end": cue["end"],
+                        "detail": describe(cue)})
+            if len(out) >= limit:
+                break
+    return out
+
+
+# -------------------------------------------------------------------- fonts
+
+def missing_fonts(wanted):
+    """Which of these fonts this machine does not have. None means unknown.
+
+    Font availability is answered by fontconfig when it is installed, and not
+    guessed when it is not: a caption file naming a font is only a problem on a
+    machine that has to render it, and reporting an absence this tool cannot
+    actually verify would be worse than admitting it did not check.
+    """
+    if not wanted:
+        return []
+    installed = installed_families()
+    if installed is None:
+        return None
+    folded = {name.strip().lower() for name in installed}
+    return sorted({name for name in wanted
+                   if name.strip().lower() not in folded})
+
+
+def installed_families(_cache={}):
+    if "families" in _cache:
+        return _cache["families"]
+    families = None
+    binary = shutil.which("fc-list")
+    if binary:
+        try:
+            result = subprocess.run([binary, ":", "family"],
+                                    capture_output=True, text=True, timeout=30,
+                                    **platform_support.no_console())
+            if result.returncode == 0:
+                families = set()
+                for line in result.stdout.splitlines():
+                    # fc-list prints every localised alias, comma separated.
+                    for alias in line.split(","):
+                        if alias.strip():
+                            families.add(alias.strip())
+        except (OSError, subprocess.TimeoutExpired):
+            families = None
+    _cache["families"] = families
+    return families
+
+
+# ------------------------------------------------- captions against the audio
+
+# Everything above measures a caption file against itself. This measures it
+# against the programme, which is where the hours actually go: nobody scrubs a
+# two-hour recording to find the eleven seconds nobody captioned, and nobody
+# notices a file is a second and a half out of sync until a viewer says so.
+#
+# The audio pass already knows where the sound is — `silences` is measured, not
+# guessed — so this needs no decode of its own.
+
+ALIGNMENT_DEFAULTS = {
+    # A stretch of sound with no cue over it. Six seconds because speech has
+    # gaps, and because music and atmosphere are legitimately uncaptioned.
+    "uncaptioned_min_s": 6.0,
+    # How far a cue may sit from the speech it belongs to before it counts as
+    # evidence of drift.
+    "drift_window_s": 5.0,
+    "drift_min_s": 0.4,
+    # How many cues must match a sound onset before the median of their
+    # offsets is worth reporting. A song is one long run of sound with a
+    # handful of onsets in it, so most cues match nothing and the few that do
+    # are not evidence about the file.
+    "drift_confidence_min": 0.5,
+    # A cue wholly inside silence longer than this is a cue on nothing.
+    "orphan_margin_s": 0.35,
+}
+
+
+def align(cues, silences, duration_s=None, options=None):
+    """Compare where the captions are against where the sound is."""
+    settings = dict(ALIGNMENT_DEFAULTS)
+    settings.update(options or {})
+    out = {
+        "caption_uncaptioned_speech_s": None,
+        "caption_uncaptioned_intervals": [],
+        "caption_over_silence": None,
+        "caption_orphan_intervals": [],
+        "caption_drift_s": None,
+        "caption_drift_confidence": None,
+    }
+    if not cues or silences is None or not duration_s:
+        return out
+
+    sound = _sound_runs(silences, duration_s)
+    if not sound:
+        return out
+
+    out.update(_uncaptioned(cues, sound, settings))
+    out.update(_orphans(cues, silences, settings))
+    out.update(_drift(cues, sound, settings))
+    return out
+
+
+def _sound_runs(silences, duration_s):
+    """The intervals that are not silence — measured, not inferred."""
+    quiet = sorted(((s["start"], s["end"]) for s in silences),
+                   key=lambda pair: pair[0])
+    runs, position = [], 0.0
+    for start, end in quiet:
+        if start > position:
+            runs.append({"start": position, "end": min(start, duration_s)})
+        position = max(position, end or position)
+    if position < duration_s:
+        runs.append({"start": position, "end": duration_s})
+    return [run for run in runs if run["end"] - run["start"] > 0.01]
+
+
+def _gaps_in(start, end, cues):
+    """The parts of an interval no cue covers."""
+    covering = sorted(
+        ((max(start, cue["start"]), min(end, cue["end"])) for cue in cues
+         if min(end, cue["end"]) > max(start, cue["start"])),
+        key=lambda pair: pair[0])
+    gaps, position = [], start
+    for cue_start, cue_end in covering:
+        if cue_start > position:
+            gaps.append((position, cue_start))
+        position = max(position, cue_end)
+    if position < end:
+        gaps.append((position, end))
+    return gaps
+
+
+def _uncaptioned(cues, sound, settings):
+    """Sound nobody captioned, which is the thing worth finding.
+
+    The gaps *within* each stretch of sound, not the stretches as a whole: a
+    twelve-second run with three seconds of caption on the front has nine
+    seconds nobody captioned, and pointing at the whole run would be pointing
+    at the three seconds that are fine as well.
+    """
+    minimum = settings["uncaptioned_min_s"]
+    found = []
+    for run in sound:
+        for start, end in _gaps_in(run["start"], run["end"], cues):
+            length = end - start
+            if length < minimum:
+                continue
+            found.append({"start": round(start, 2), "end": round(end, 2),
+                          "duration": round(length, 2),
+                          "detail": f"{length:.1f} s of sound with no caption"})
+    return {"caption_uncaptioned_speech_s": round(
+                sum(f["duration"] for f in found), 2),
+            "caption_uncaptioned_intervals": found}
+
+
+def _orphans(cues, silences, settings):
+    """Cues sitting on nothing, which is what drift looks like from one end."""
+    margin = settings["orphan_margin_s"]
+    quiet = [(s["start"], s["end"]) for s in silences
+             if (s["end"] - s["start"]) > margin * 2]
+    found = []
+    for cue in cues:
+        for start, end in quiet:
+            if cue["start"] >= start + margin and cue["end"] <= end - margin:
+                found.append({
+                    "start": cue["start"], "end": cue["end"],
+                    "detail": f"cue {cue['index']} plays over silence"})
+                break
+    return {"caption_over_silence": len(found),
+            "caption_orphan_intervals": found}
+
+
+def _drift(cues, sound, settings):
+    """A constant offset between the captions and the programme.
+
+    Each cue is matched to the nearest moment sound *starts*, and the median of
+    those offsets is the answer. The median rather than the mean because a
+    handful of cues legitimately sit mid-sentence, and one of those should not
+    drag the figure; and a confidence figure, because a file where only a
+    third of cues matched anything has not really been measured.
+    """
+    window = settings["drift_window_s"]
+    onsets = [run["start"] for run in sound]
+    if not onsets:
+        return {}
+    offsets = []
+    for cue in cues:
+        nearest = min(onsets, key=lambda onset: abs(cue["start"] - onset))
+        if abs(cue["start"] - nearest) <= window:
+            offsets.append(cue["start"] - nearest)
+    if len(offsets) < 3:
+        return {}
+    confidence = len(offsets) / len(cues)
+    offsets.sort()
+    median = offsets[len(offsets) // 2]
+    # Below the threshold the figure is reported for the record and no rule
+    # acts on it, because a file most of whose cues matched nothing has not
+    # been measured. Continuous music is the case that makes this necessary:
+    # one long run of sound offers almost no onsets to match against, and the
+    # few cues that land near one would otherwise decide the answer.
+    if confidence < settings["drift_confidence_min"]:
+        return {"caption_drift_s": None,
+                "caption_drift_measured_s": round(median, 2),
+                "caption_drift_confidence": round(confidence, 2)}
+    return {"caption_drift_s": round(median, 2),
+            "caption_drift_confidence": round(confidence, 2)}

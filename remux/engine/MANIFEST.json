@@ -1,0 +1,11 @@
+{
+  "commit": "317ef9a858d5f48391a7fba9d15e50a88353c1f5",
+  "files": {
+    "engines/__init__.py": "d9553ea594f49b13651a56645bef826309729d2c9b2f1891b95284f25d248c91",
+    "engines/ffmpeg.py": "5aeb99b19b9968f6929f2f56f375d5754b39d1d8083adf6d182a5407f8af9f85",
+    "formats.py": "71419171afa1ae3f69ccc085e8a9b6c72d898c329926160f3027ee603d1fd96c",
+    "platform_support.py": "d60889f85e7af50b8347be39f10371e4605555e64d8148fa41cd59c149810eab"
+  },
+  "from": "https://github.com/snepssen/siphon",
+  "version": "0.1.0"
+}
