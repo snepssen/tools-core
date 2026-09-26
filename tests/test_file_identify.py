@@ -116,7 +116,8 @@ class FileIdentify(unittest.TestCase):
 
     def test_the_engine_is_still_auto_sorts(self):
         done = subprocess.run(
-            [sys.executable, str(TOOL / "sync-engine.py"), "--check"],
+            [sys.executable, str(ROOT / "scripts" / "from-auto-sort.py"),
+             "--check", "--only", "file-identify"],
             capture_output=True, text=True, timeout=60)
         self.assertEqual(done.returncode, 0, done.stderr)
 

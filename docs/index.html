@@ -290,6 +290,7 @@
     .filter:hover, .filter[aria-pressed="true"] { border-color: var(--tools); color: var(--chalk); background: color-mix(in srgb, var(--tools) 12%, transparent); }
     .tool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; border: 1px solid var(--line); background: var(--line); }
     .tool-card { min-width: 0; padding: 28px; background: var(--surface); }
+    .tool-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
     .tool-card[hidden] { display: none; }
     .tool-card .tag { color: var(--tools); font: 11px/1 var(--mono); text-transform: uppercase; letter-spacing: .1em; }
     .tool-card h3 { margin: 38px 0 10px; font: 700 23px/1.1 var(--sans); letter-spacing: -.025em; }
@@ -589,7 +590,7 @@
             <div class="project-copy">
               <span class="project-no">07 / FIELD TOOLS</span>
               <h3>tools-core</h3>
-              <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, Qwen3-TTS truth probes, and auto-sort&rsquo;s file identifier on its own.</p>
+              <p>The useful pieces that fell out of the larger work: audio forensics, corpus preparation, Piper workflows, Qwen3-TTS truth probes, and two parts of auto-sort on their own: its file identifier and its tray icon.</p>
               <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
               <div class="project-actions">
                 <a class="button" href="#tools">Open the toolbox</a>
@@ -597,7 +598,7 @@
               </div>
             </div>
             <div class="project-media tools-plate" aria-label="tools-core directory map">
-              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── site-capture/<br>├── site-fonts/<br>└── tts-research/</div>
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── site-capture/<br>├── site-fonts/<br>├── tray-icon/<br>└── tts-research/</div>
             </div>
           </article>
         </div>
@@ -625,6 +626,7 @@
           <button class="filter" type="button" data-filter="speech" aria-pressed="false">Speech</button>
           <button class="filter" type="button" data-filter="gateway" aria-pressed="false">Gateway</button>
           <button class="filter" type="button" data-filter="files" aria-pressed="false">Files</button>
+          <button class="filter" type="button" data-filter="desktop" aria-pressed="false">Desktop</button>
         </div>
 
         <div class="tool-grid" aria-live="polite">
@@ -674,6 +676,14 @@
             <p>Say what a file is from its bytes, not its name: the real format when the extension lies, the heading a document gives itself, when it happened and where it came from. auto-sort&rsquo;s own identifier, unchanged, and it never writes.</p>
             <div class="command"><code>python3 file-identify/identify-file.py FILE --facts</code><button class="copy" type="button" data-copy="python3 file-identify/identify-file.py FILE --facts" aria-label="Copy file identifier command">Copy</button></div>
             <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/file-identify">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="desktop">
+            <span class="tag">Desktop / from auto-sort</span>
+            <h3>Tray icon</h3>
+            <p>Put an icon with a menu in the macOS menu bar, the Windows notification area or a Linux panel, each entry running a command of yours. Nothing installed: auto-sort&rsquo;s own tray, speaking to the Objective-C runtime, Win32 and D-Bus with the standard library.</p>
+            <div class="command"><code>python3 tray-icon/tray-icon.py "Backups" --item "Back up now" "~/bin/backup.sh"</code><button class="copy" type="button" data-copy="python3 tray-icon/tray-icon.py &quot;Backups&quot; --item &quot;Back up now&quot; &quot;~/bin/backup.sh&quot;" aria-label="Copy tray icon command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/tray-icon">Instructions ↗</a>
           </article>
         </div>
       </div>

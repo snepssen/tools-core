@@ -1,0 +1,10 @@
+{
+  "commit": "2ef70180549eb9665fc544ef9331fd25876a8a73",
+  "files": {
+    "dbuswire.py": "8af7f6e66f11ba66ea3b257e0dd40e614578f050e9bff707ec53be9eca5bc41c",
+    "tray.py": "45c78450a8d89a89736c0ba9c43677c7f6d27cffbbb6d4ed50e3f084c6c54445",
+    "winapi.py": "2981f22ccd842bca9f780bb2161f397fb363e6d5ceb16f451e2786595b4d2218"
+  },
+  "from": "https://github.com/snepssen/auto-sort",
+  "version": "0.9.0"
+}

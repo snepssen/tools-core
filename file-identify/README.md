@@ -82,12 +82,13 @@ filed. The code in `engine/` is a copy of auto-sort's modules, not a
 rewrite: `engine/MANIFEST.json` names the auto-sort version and commit they
 came from and the hash of every file.
 
-It is never edited here. A fix goes into auto-sort, and is copied across:
+It is never edited here. A fix goes into auto-sort, and is copied across
+with the script that keeps every tool taken from auto-sort in step:
 
 ```sh
-python3 file-identify/sync-engine.py --from ~/code/auto-sort
-python3 file-identify/sync-engine.py --check
-python3 file-identify/sync-engine.py --check --from ~/code/auto-sort
+python3 scripts/from-auto-sort.py --from ~/code/auto-sort
+python3 scripts/from-auto-sort.py --check
+python3 scripts/from-auto-sort.py --check --from ~/code/auto-sort
 ```
 
 `--check` fails if any engine file differs from the manifest, which the

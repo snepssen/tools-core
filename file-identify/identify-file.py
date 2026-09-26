@@ -13,7 +13,8 @@ told, and where it came from if the system kept a note of the download.
 it and how sure that reader is; `--json` prints the same for a program.
 
 This is auto-sort's identifier, run on its own. The engine in `engine/` is
-a copy of auto-sort's modules, never edited here (see sync-engine.py).
+a copy of auto-sort's modules, never edited here (see
+scripts/from-auto-sort.py).
 
 It reads and never writes: nothing is moved, renamed, cached or sent. The
 readers are standard-library Python. ffprobe, exiftool and, for scans,
