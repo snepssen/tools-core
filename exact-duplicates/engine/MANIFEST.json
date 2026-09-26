@@ -1,7 +1,7 @@
 {
-  "commit": "19bc5de43fd3398fcc75b98649dc490cafe8db87",
+  "commit": "19bc5de43fd3398fcc75b98649dc490cafe8db87 (with uncommitted changes)",
   "files": {
-    "bundles.py": "4989a6b990de15e1e6505957eed92ae5934ba95997e4820049522dbd25508276",
+    "bundles.py": "1e7e40461294f847d1e68fb07bc2b63e114bc5d973b5608460b26b1d140b5f3b",
     "duplicates.py": "4185f06afb020d475dad3a84d7c1ef7fa100de8d2f00479c67d90865056497cc",
     "kinds.py": "f856295cf61ea63ec93ef6bfc19f1f5d9ecaa73fcf36cbe5c8df92e6ff96ce75",
     "mover.py": "c684b8537edd5b307d6eaf72edfc902faccbf4cecb31ed73ff544c6a17a34516",

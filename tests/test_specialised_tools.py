@@ -142,6 +142,35 @@ class CommandTests(Fixtures):
         self.assertTrue(any(r["reason"] == "project folder" for r in rows))
         self.assertFalse(any(Path(r["primary"]).name == "package.json" for r in rows))
 
+    def test_grouping_ignores_listing_order_in_every_extracted_engine(self):
+        # Exercise both orders explicitly: macOS and Linux need not enumerate
+        # equal-sized files alike. Import each copy in its own process.
+        script = '''
+import itertools, json, sys
+from pathlib import Path
+sys.dont_write_bytecode = True
+sys.path.insert(0, sys.argv[1])
+import bundles
+folder = Path(sys.argv[2])
+results = []
+for primary, companion in (("model.obj", "model.mtl"), ("photo.cr2", "photo.jpg")):
+    for sizes in ((7, 7), (1, 100), (100, 1)):
+        for name, size in zip((primary, companion), sizes):
+            (folder / name).write_bytes(b"x" * size)
+        for names in itertools.permutations((primary, companion)):
+            items = bundles.group(str(folder), names)
+            results.append(len(items) == 1 and Path(items[0].primary).name == primary
+                           and {Path(p).name for p in items[0].members} == set(names))
+print(json.dumps(results))
+'''
+        for tool in ("bundle-list", "exact-duplicates", "file-identify"):
+            with self.subTest(engine=tool):
+                done = subprocess.run([sys.executable, "-c", script,
+                                       str(ROOT / tool / "engine"), str(self.folder)],
+                                      capture_output=True, text=True, timeout=30)
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(json.loads(done.stdout), [True] * 12)
+
     def test_upstream_manifests(self):
         for script in ("from-auto-sort.py", "from-projects.py"):
             done = subprocess.run([sys.executable, str(ROOT / "scripts" / script), "--check"],
