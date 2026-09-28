@@ -4,6 +4,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import struct
 import subprocess
 import sys
 import tempfile
@@ -247,13 +248,20 @@ class RemuxTests(Fixtures):
         self.assertFalse(refused.exists())
 
 
-class WavTagTests(Fixtures):
+class AudioTagTests(Fixtures):
     @classmethod
     def setUpClass(cls):
         import importlib.util
-        spec = importlib.util.spec_from_file_location("wav_tag", ROOT / "wav-tag" / "wav-tag.py")
+        spec = importlib.util.spec_from_file_location("audio_tag", ROOT / "audio-tag" / "audio-tag.py")
         cls.mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(cls.mod)
+
+    def age(self, path, hours):
+        # Setting an older mtime also moves macOS birth time back, so this
+        # controls creation order on every platform.
+        stamp = 1_700_000_000 - hours * 3600
+        os.utime(path, (stamp, stamp))
+        return path
 
     def wav(self, name, age_hours):
         import wave
@@ -264,17 +272,38 @@ class WavTagTests(Fixtures):
             w.setsampwidth(2)
             w.setframerate(8000)
             w.writeframes(bytes(range(256)) * 16)
-        # Setting an older mtime also moves macOS birth time back, so this
-        # controls creation order on every platform.
-        stamp = 1_700_000_000 - age_hours * 3600
-        os.utime(path, (stamp, stamp))
-        return path
+        return self.age(path, age_hours)
+
+    # Minimal stand-ins: the tool only touches metadata, so a valid container
+    # around recognisable payload bytes is enough to prove the audio survives.
+    MP3_AUDIO = (b"\xff\xfb\x90\x64" + bytes(413)) * 3
+
+    def id3v24(self, *frames):
+        body = b""
+        for fid, text in frames:
+            payload = b"\x03" + text.encode("utf-8")
+            body += fid.encode() + self.mod.synchsafe(len(payload)) + b"\x00\x00" + payload
+        return b"ID3\x04\x00\x00" + self.mod.synchsafe(len(body)) + body
+
+    def flac(self, *comments):
+        streaminfo = bytes(34)
+        vendor = b"test"
+        vc = struct.pack("<I", len(vendor)) + vendor + struct.pack("<I", len(comments))
+        vc += b"".join(struct.pack("<I", len(c)) + c for c in comments)
+        picture = b"\x00\x00\x00\x03" + bytes(28)
+        blocks = [(0, streaminfo), (4, vc), (6, picture)]
+        meta = b"".join(bytes([k | (0x80 if i == 2 else 0)]) + len(b).to_bytes(3, "big") + b
+                        for i, (k, b) in enumerate(blocks))
+        return b"fLaC" + meta + b"\xff\xf8" + bytes(100)
+
+    def put(self, name, data, age_hours):
+        path = self.folder / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(data)
+        return self.age(path, age_hours)
 
     def tags(self, path):
-        chunks = self.mod.read_chunks(path.read_bytes())
-        id3 = next(self.mod.parse_id3(b) for c, b in chunks if c in self.mod.META_CHUNKS)
-        info = next(self.mod.parse_info(b) for c, b in chunks if self.mod.is_info_list(c, b))
-        return id3, info
+        return dict(self.mod.read_tags(path))
 
     def frames(self, path):
         import wave
@@ -284,7 +313,7 @@ class WavTagTests(Fixtures):
     def test_preview_writes_nothing(self):
         path = self.wav("EP/Song.wav", 1)
         before = (path.read_bytes(), path.stat().st_mtime_ns)
-        done = self.run_tool("wav-tag", self.folder, "--artist", "Someone")
+        done = self.run_tool("audio-tag", self.folder, "--artist", "Someone")
         self.assertEqual(done.returncode, 0, done.stderr)
         self.assertIn("Preview only", done.stdout)
         self.assertEqual(before, (path.read_bytes(), path.stat().st_mtime_ns))
@@ -301,7 +330,7 @@ class WavTagTests(Fixtures):
         audio = {p: self.frames(p) for p in (late, early, a1, a2, b1, bonus)}
         times = {p: p.stat().st_mtime_ns for p in audio}
 
-        done = self.run_tool("wav-tag", self.folder, "--artist", "Someone", "--apply")
+        done = self.run_tool("audio-tag", self.folder, "--artist", "Someone", "--apply")
         self.assertEqual(done.returncode, 0, done.stderr)
 
         expected = {
@@ -313,30 +342,114 @@ class WavTagTests(Fixtures):
             bonus: ("Extra", "LP", "4/4"),
         }
         for path, (title, album, track) in expected.items():
-            id3, info = self.tags(path)
-            self.assertEqual((id3["TIT2"], id3["TALB"], id3["TRCK"], id3["TPE1"]),
-                             (title, album, track, "Someone"), path.name)
-            self.assertEqual((info["INAM"], info["IPRD"], info["ITRK"], info["IART"]),
-                             (title, album, track, "Someone"), path.name)
+            found = self.tags(path)
+            for block in ("ID3", "INFO"):
+                t = found[block]
+                self.assertEqual((t["title"], t["album"], t["track"], t["artist"]),
+                                 (title, album, track, "Someone"), (path.name, block))
             self.assertEqual(self.frames(path), audio[path])
             self.assertEqual(path.stat().st_mtime_ns, times[path])
 
         # Re-running replaces the tags rather than stacking another copy.
         size = a1.stat().st_size
-        self.assertEqual(self.run_tool("wav-tag", self.folder, "--artist", "Someone",
+        self.assertEqual(self.run_tool("audio-tag", self.folder, "--artist", "Someone",
                                        "--apply").returncode, 0)
         self.assertEqual(a1.stat().st_size, size)
-        shown = self.run_tool("wav-tag", self.folder, "--show")
+        shown = self.run_tool("audio-tag", self.folder, "--show")
         self.assertIn("1/4 | First | Someone | LP", shown.stdout)
+
+    def test_mp3_and_flac_keep_other_fields_and_audio(self):
+        v1 = b"TAG" + bytes(94) + b"keep this comment".ljust(28, b"\x00") + b"\x00\x05\x0c"
+        mp3 = self.put("EP/One.mp3", self.id3v24(("TIT2", "Old"), ("USLT", "xlyrics"),
+                                                 ("TCOM", "Composer")) + self.MP3_AUDIO + v1, 3)
+        bare = self.put("EP/Two.mp3", self.MP3_AUDIO, 2)
+        flac = self.put("EP/Three.flac", self.flac(b"TITLE=old", b"COMMENT=note",
+                                                  b"TRACKNUMBER=9"), 1)
+
+        done = self.run_tool("audio-tag", self.folder, "--artist", "Someone", "--apply")
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+        data = mp3.read_bytes()
+        self.assertEqual(data[3], 4, "ID3 version is kept")
+        n = self.mod.id3_size(data)
+        self.assertEqual(data[n:-128], self.MP3_AUDIO)
+        _, frames = self.mod.parse_id3_frames(data[:n])
+        ids = [f for f, _, _ in frames]
+        self.assertIn("USLT", ids)
+        self.assertIn("TCOM", ids)
+        self.assertEqual(ids.count("TIT2"), 1)
+        self.assertEqual(self.tags(mp3)["ID3"]["title"], "One")
+        self.assertEqual(self.tags(mp3)["ID3"]["track"], "1/3")
+        self.assertEqual(data[-125:-95].rstrip(b"\x00"), b"One")   # ID3v1 title
+        self.assertIn(b"keep this comment", data[-128:])
+        self.assertEqual(data[-2], 1)                      # ID3v1.1 track
+
+        data = bare.read_bytes()
+        self.assertEqual(data[self.mod.id3_size(data):], self.MP3_AUDIO)
+        self.assertEqual(self.tags(bare)["ID3"]["title"], "Two")
+
+        blocks, frames_ = self.mod.flac_blocks(flac.read_bytes())
+        self.assertEqual(frames_, b"\xff\xf8" + bytes(100))
+        self.assertEqual([k for k, _ in blocks], [0, 4, 6])
+        _, comments = self.mod.parse_vorbis(blocks[1][1])
+        self.assertIn(b"COMMENT=note", comments)
+        self.assertNotIn(b"TITLE=old", comments)
+        self.assertEqual(self.tags(flac)["VORBIS"]["track"], "3/3")
+        self.assertEqual(self.tags(flac)["VORBIS"]["artist"], "Someone")
+
+    def test_same_name_in_two_formats_is_one_track(self):
+        wav = self.wav("EP/Song.wav", 2)
+        mp3 = self.put("EP/Song.mp3", self.MP3_AUDIO, 1)
+        other = self.wav("EP/Later.wav", 0)
+        done = self.run_tool("audio-tag", self.folder, "--artist", "Someone", "--apply")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertEqual(self.tags(wav)["ID3"]["track"], "1/2")
+        self.assertEqual(self.tags(mp3)["ID3"]["track"], "1/2")
+        self.assertEqual(self.tags(other)["ID3"]["track"], "2/2")
+
+    @unittest.skipUnless(FFMPEG and FFPROBE, "requires ffmpeg and ffprobe")
+    def test_real_files_read_back_in_ffprobe(self):
+        made = {}
+        for name, args in {
+            "One.mp3": ["-c:a", "libmp3lame", "-id3v2_version", "4", "-metadata", "lyrics=la"],
+            "Two.mp3": ["-c:a", "libmp3lame", "-id3v2_version", "3", "-write_id3v1", "1"],
+            "Three.flac": ["-c:a", "flac", "-metadata", "comment=note"],
+        }.items():
+            path = self.folder / "EP" / name
+            path.parent.mkdir(exist_ok=True)
+            subprocess.run([FFMPEG, "-v", "error", "-f", "lavfi", "-i", "sine=440:d=1", *args,
+                            str(path)], check=True)
+            made[path] = self.decoded(path)
+        done = self.run_tool("audio-tag", self.folder, "--artist", "Someone", "--apply")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        for path, digest in made.items():
+            self.assertEqual(self.decoded(path), digest, path.name)
+            probe = json.loads(subprocess.run(
+                [FFPROBE, "-v", "error", "-show_entries", "format_tags", "-of", "json", str(path)],
+                capture_output=True, text=True, check=True).stdout)
+            t = {k.lower(): v for k, v in probe["format"]["tags"].items()}
+            self.assertEqual((t["title"], t["artist"], t["album"]),
+                             (path.stem, "Someone", "EP"), path.name)
+        self.assertEqual(json.loads(subprocess.run(
+            [FFPROBE, "-v", "error", "-show_entries", "format_tags", "-of", "json",
+             str(self.folder / "EP" / "One.mp3")], capture_output=True, text=True).stdout
+        )["format"]["tags"].get("lyrics"), "la")
+
+    def decoded(self, path):
+        return subprocess.run([FFMPEG, "-v", "error", "-i", str(path), "-map", "0:a", "-f", "md5", "-"],
+                              capture_output=True, text=True, check=True).stdout
 
     def test_unreadable_file_fails_without_stopping_the_rest(self):
         good = self.wav("EP/Good.wav", 2)
         bad = self.write("EP/Bad.wav", "not audio")
-        done = self.run_tool("wav-tag", self.folder, "--artist", "Someone", "--apply")
+        fake = self.write("EP/Fake.mp3", "not audio either")
+        done = self.run_tool("audio-tag", self.folder, "--artist", "Someone", "--apply")
         self.assertEqual(done.returncode, 1)
         self.assertIn("Bad.wav", done.stdout)
+        self.assertIn("Fake.mp3", done.stdout)
         self.assertEqual(bad.read_text(), "not audio")
-        self.assertEqual(self.tags(good)[0]["TIT2"], "Good")
+        self.assertEqual(fake.read_text(), "not audio either")
+        self.assertEqual(self.tags(good)["ID3"]["title"], "Good")
 
 
 if __name__ == "__main__":
