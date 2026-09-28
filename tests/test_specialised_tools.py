@@ -247,5 +247,97 @@ class RemuxTests(Fixtures):
         self.assertFalse(refused.exists())
 
 
+class WavTagTests(Fixtures):
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("wav_tag", ROOT / "wav-tag" / "wav-tag.py")
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def wav(self, name, age_hours):
+        import wave
+        path = self.folder / name
+        path.parent.mkdir(parents=True, exist_ok=True)
+        with wave.open(str(path), "wb") as w:
+            w.setnchannels(2)
+            w.setsampwidth(2)
+            w.setframerate(8000)
+            w.writeframes(bytes(range(256)) * 16)
+        # Setting an older mtime also moves macOS birth time back, so this
+        # controls creation order on every platform.
+        stamp = 1_700_000_000 - age_hours * 3600
+        os.utime(path, (stamp, stamp))
+        return path
+
+    def tags(self, path):
+        chunks = self.mod.read_chunks(path.read_bytes())
+        id3 = next(self.mod.parse_id3(b) for c, b in chunks if c in self.mod.META_CHUNKS)
+        info = next(self.mod.parse_info(b) for c, b in chunks if self.mod.is_info_list(c, b))
+        return id3, info
+
+    def frames(self, path):
+        import wave
+        with wave.open(str(path)) as w:
+            return w.getparams()[:4], w.readframes(w.getnframes())
+
+    def test_preview_writes_nothing(self):
+        path = self.wav("EP/Song.wav", 1)
+        before = (path.read_bytes(), path.stat().st_mtime_ns)
+        done = self.run_tool("wav-tag", self.folder, "--artist", "Someone")
+        self.assertEqual(done.returncode, 0, done.stderr)
+        self.assertIn("Preview only", done.stdout)
+        self.assertEqual(before, (path.read_bytes(), path.stat().st_mtime_ns))
+
+    def test_folders_sides_titles_and_order(self):
+        # Created out of name order: creation date must decide.
+        late = self.wav("Night EP/Aa_Song (1).wav", 1)
+        early = self.wav("Night EP/Zed Song - Copy.wav", 5)
+        # Numbered names win over creation date; sides merge, Bonus last.
+        b1 = self.wav("LP/B/B01 Third.wav", 9)
+        a2 = self.wav("LP/A/A02 Second.wav", 8)
+        a1 = self.wav("LP/A/A01 First.wav", 1)
+        bonus = self.wav("LP/Bonus/Extra.wav", 20)
+        audio = {p: self.frames(p) for p in (late, early, a1, a2, b1, bonus)}
+        times = {p: p.stat().st_mtime_ns for p in audio}
+
+        done = self.run_tool("wav-tag", self.folder, "--artist", "Someone", "--apply")
+        self.assertEqual(done.returncode, 0, done.stderr)
+
+        expected = {
+            early: ("Zed Song", "Night EP", "1/2"),
+            late: ("Aa Song", "Night EP", "2/2"),
+            a1: ("First", "LP", "1/4"),
+            a2: ("Second", "LP", "2/4"),
+            b1: ("Third", "LP", "3/4"),
+            bonus: ("Extra", "LP", "4/4"),
+        }
+        for path, (title, album, track) in expected.items():
+            id3, info = self.tags(path)
+            self.assertEqual((id3["TIT2"], id3["TALB"], id3["TRCK"], id3["TPE1"]),
+                             (title, album, track, "Someone"), path.name)
+            self.assertEqual((info["INAM"], info["IPRD"], info["ITRK"], info["IART"]),
+                             (title, album, track, "Someone"), path.name)
+            self.assertEqual(self.frames(path), audio[path])
+            self.assertEqual(path.stat().st_mtime_ns, times[path])
+
+        # Re-running replaces the tags rather than stacking another copy.
+        size = a1.stat().st_size
+        self.assertEqual(self.run_tool("wav-tag", self.folder, "--artist", "Someone",
+                                       "--apply").returncode, 0)
+        self.assertEqual(a1.stat().st_size, size)
+        shown = self.run_tool("wav-tag", self.folder, "--show")
+        self.assertIn("1/4 | First | Someone | LP", shown.stdout)
+
+    def test_unreadable_file_fails_without_stopping_the_rest(self):
+        good = self.wav("EP/Good.wav", 2)
+        bad = self.write("EP/Bad.wav", "not audio")
+        done = self.run_tool("wav-tag", self.folder, "--artist", "Someone", "--apply")
+        self.assertEqual(done.returncode, 1)
+        self.assertIn("Bad.wav", done.stdout)
+        self.assertEqual(bad.read_text(), "not audio")
+        self.assertEqual(self.tags(good)[0]["TIT2"], "Good")
+
+
 if __name__ == "__main__":
     unittest.main()
