@@ -590,7 +590,7 @@
             <div class="project-copy">
               <span class="project-no">07 / FIELD TOOLS</span>
               <h3>tools-core</h3>
-              <p>The useful pieces that fell out of the larger work: caption checks, media repackaging, file identification, duplicate finding, asset grouping and tray icons, alongside audio forensics, corpus preparation and voice research.</p>
+              <p>The useful pieces that fell out of the larger work: caption checks, media repackaging, audio tagging, file identification, duplicate finding, asset grouping and tray icons, alongside audio forensics, corpus preparation and voice research.</p>
               <div class="project-meta">Python + shell · local-first · MIT / GPL-3.0 split</div>
               <div class="project-actions">
                 <a class="button" href="#tools">Open the toolbox</a>
@@ -598,7 +598,7 @@
               </div>
             </div>
             <div class="project-media tools-plate" aria-label="tools-core directory map">
-              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── bundle-list/<br>├── caption-check/<br>├── exact-duplicates/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── remux/<br>├── site-capture/<br>├── site-fonts/<br>├── tray-icon/<br>└── tts-research/</div>
+              <div class="tool-tree"><strong>tools-core/</strong><br>├── audio-analysis/<br>├── audio-tag/<br>├── bundle-list/<br>├── caption-check/<br>├── exact-duplicates/<br>├── file-identify/<br>├── gateway-authoring/<br>├── piper-workflows/<br>├── remux/<br>├── site-capture/<br>├── site-fonts/<br>├── tray-icon/<br>└── tts-research/</div>
             </div>
           </article>
         </div>
@@ -661,6 +661,14 @@
             <p>See which files belong together: a film and its subtitles, a RAW/JPEG pair, a model and its sidecars, or a sequence of frames. Read the groups or export a JSON listing.</p>
             <div class="command"><code>python3 bundle-list/bundle-list.py ./assets --groups-only</code><button class="copy" type="button" data-copy="python3 bundle-list/bundle-list.py ./assets --groups-only" aria-label="Copy Bundle List command">Copy</button></div>
             <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/bundle-list">Instructions ↗</a>
+          </article>
+
+          <article class="tool-card" data-kind="audio files" id="audio-tag">
+            <span class="tag">Audio / release prep</span>
+            <h3>Audio Tag</h3>
+            <p>Stop “Unknown artist”. Title, artist, album, year and track number for untagged WAV, MP3 and FLAC files, read from the folder layout, the file names and the order they were made. Preview first, then write in place.</p>
+            <div class="command"><code>python3 audio-tag/audio-tag.py ~/Music --artist "Your Name"</code><button class="copy" type="button" data-copy="python3 audio-tag/audio-tag.py ~/Music --artist &quot;Your Name&quot;" aria-label="Copy Audio Tag preview command">Copy</button></div>
+            <a class="readme" href="https://github.com/snepssen/tools-core/tree/main/audio-tag">Instructions ↗</a>
           </article>
 
           <article class="tool-card" data-kind="audio">

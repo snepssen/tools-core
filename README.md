@@ -15,6 +15,7 @@ third-party source trees.
 | Area | What it does | Runtime | Platform | Writes files |
 | --- | --- | --- | --- | --- |
 | [`audio-analysis/`](audio-analysis/) | Measures stereo beat layers, joins, onsets, pace, and prepares voice references | Python 3; NumPy/SciPy/soundfile for beat analysis; ffmpeg for corpus cutting | macOS/Linux | Some tools |
+| [`audio-tag/`](audio-tag/) | Tags untagged WAV, MP3 and FLAC files (Suno exports, bounces) with title, artist, album, year and track number from the folder layout, file names and creation dates | Python 3.8+, standard library | macOS verified; Windows/Linux unverified | Yes, in place (preview by default) |
 | [`bundle-list/`](bundle-list/) | Lists the files belonging to one asset: sidecars, photo pairs, multipart archives and frame sequences | Python 3.8+, standard library | macOS verified; Windows/Linux unverified | No |
 | [`caption-check/`](caption-check/) | Finds subtitle timing and readability problems, with exact cues to inspect | Python 3.8+, standard library; optional fontconfig | macOS verified; Windows/Linux unverified | No |
 | [`exact-duplicates/`](exact-duplicates/) | Finds byte-identical copies across folders, accounting for overlapping roots and hard links | Python 3.8+, standard library | macOS verified; Windows/Linux unverified | No |
