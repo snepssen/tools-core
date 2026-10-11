@@ -12,27 +12,35 @@
   "pages": [
     {
       "slug": "gateway-forge",
-      "height": 14825
+      "height": 16488
     },
     {
       "slug": "voice-forge",
-      "height": 10192
+      "height": 10499
     },
     {
       "slug": "protoke",
-      "height": 9661
+      "height": 9968
     },
     {
       "slug": "media-preflight",
-      "height": 18984
+      "height": 19291
     },
     {
       "slug": "siphon",
-      "height": 9364
+      "height": 9671
+    },
+    {
+      "slug": "auto-sort",
+      "height": 12968
+    },
+    {
+      "slug": "translate-core",
+      "height": 8858
     },
     {
       "slug": "tools-core",
-      "height": 10206
+      "height": 11406
     }
   ]
 }
