@@ -47,6 +47,9 @@ library tests, and rejects private absolute paths, likely secrets, generated
 media, model artifacts, caches, and unexpectedly large files.
 
 Extracted engines retain their upstream code and source-hash manifests.
+The apps are the source and these are copies: to bring every engine up to
+date with the app it comes from, checked and pushed in one step, run
+`scripts/update-from-apps.sh` with the apps checked out beside tools-core.
 The release tests check these with `scripts/from-auto-sort.py --check` and
 `scripts/from-projects.py --check`. Fix engine code in its parent project,
 then use the relevant copy script; see each tool's README. Remux integration
