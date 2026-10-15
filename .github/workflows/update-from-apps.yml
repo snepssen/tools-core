@@ -1,0 +1,38 @@
+name: update engines from the apps
+
+# The apps are the source of the extracted engines: auto-sort for bundle-list,
+# exact-duplicates, file-identify and tray-icon; Media Preflight for
+# caption-check; siphon for remux. Once a day this checks them out beside
+# tools-core, as scripts/update-from-apps.sh expects, and runs it: copy, test,
+# release check, then commit and push only if something changed and all pass.
+# Run it by hand from the Actions tab to update at once.
+on:
+  schedule:
+    - cron: "23 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: update-from-apps
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check out the apps beside tools-core
+        run: |
+          for app in auto-sort media-preflight siphon; do
+            git clone -q --depth 1 "https://github.com/snepssen/$app.git" "../$app"
+          done
+      - name: Update, test, push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          scripts/update-from-apps.sh
