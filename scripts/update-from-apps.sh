@@ -15,6 +15,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$(dirname "$(pwd)")"
 [ -z "$(git status --porcelain)" ] || { echo "error: tools-core has uncommitted changes" >&2; exit 1; }
+git pull -q --ff-only  # GitHub Actions runs this too (update-from-apps.yml): start from its latest
 
 pulled=()
 if [ -d "$ROOT/auto-sort" ]; then
