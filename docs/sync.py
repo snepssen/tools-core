@@ -11,8 +11,8 @@ and no jump bar at all. Running it through the project-page generator would
 mean teaching that generator five special cases that only this page ever uses,
 which is the coupling the generator exists to avoid.
 
-What this page does share is the project rail, the ecosystem grid and the
-contact card — the parts that go stale when a project is added, or that get
+What this page does share is the project rail, the ecosystem grid, the
+contact card and the systems each project row names — the parts that go stale when a project is added, or that get
 re-invented every time somebody writes the same section again. Those three
 regions are rewritten from the same ecosystem.json and the same build.py
 functions the other pages use, and everything else here stays hand-written,
@@ -44,8 +44,23 @@ def replace(html, start, end, new):
     return html[:first] + new + html[last:], html[first:last]
 
 
+# The hub's sections, for the rail's section links: the same links its own
+# second bar used to carry, which stacked a band of chrome under the rail.
+SECTIONS = [{"id": "projects", "jump": "Projects"}, {"id": "tools", "jump": "Tools"}]
+
+
+def platform_lines(html, ecosystem):
+    """Each project row's systems, from the support table every card reads."""
+    projects = {p["slug"]: p for p in ecosystem["projects"]}
+    return re.sub(
+        r'(<span class="project-platforms" data-project="([a-z-]+)">)[^<]*(</span>)',
+        lambda m: m.group(1) + build.platforms(projects[m.group(2)], stack=False) + m.group(3),
+        html)
+
+
 def sync(html, ecosystem):
-    rail = build.reindent(build.rail(ecosystem, SLUG).strip("\n"), 2)
+    hub = {"meta": {"slug": SLUG}, "sections": SECTIONS}
+    rail = build.reindent(build.rail(ecosystem, SLUG, hub).strip("\n"), 2)
     # The shared rail owns the zero-height page-top anchor as well as the
     # progress strip. Start the replacement at that anchor so repeated syncs
     # remain idempotent instead of leaving another anchor above each rail.
@@ -68,7 +83,7 @@ def sync(html, ecosystem):
                f"{inner}\n      </div>\n    </section>\n")
     html, _ = replace(html, '    <section id="contact">',
                       "      </div>\n    </section>\n", contact)
-    return html
+    return platform_lines(html, ecosystem)
 
 
 def main():

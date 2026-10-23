@@ -165,20 +165,6 @@
     .eyebrow::before { content: "[ "; color: var(--signal); }
     .eyebrow::after { content: " ]"; color: var(--signal); }
 
-    .site-nav {
-      position: sticky;
-      top: 0;
-      z-index: 20;
-      border-bottom: 1px solid var(--line);
-      background: var(--nav-bg);
-      backdrop-filter: blur(14px);
-    }
-    .nav-inner { min-height: 54px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
-    .wordmark { text-decoration: none; font: 700 14px/1 var(--mono); letter-spacing: -.02em; }
-    .wordmark span { color: var(--signal); }
-    .nav-links { display: flex; align-items: center; gap: 24px; margin: 0; padding: 0; list-style: none; }
-    .nav-links a { color: var(--muted); text-decoration: none; font: 650 12px/1 var(--sans); }
-    .nav-links a:hover { color: var(--chalk); }
 
     .hero { min-height: 77vh; display: grid; align-items: center; padding: 88px 0 72px; border-bottom: 1px solid var(--line); }
     .hero-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: clamp(40px, 8vw, 110px); align-items: end; }
@@ -348,7 +334,6 @@
     @media (max-width: 560px) {
       html { scroll-behavior: auto; }
       .wrap { width: min(100% - 28px, var(--max)); }
-      .nav-links li:nth-child(2) { display: none; }
       .hero { padding-top: 66px; }
       h1 { font-size: clamp(52px, 18vw, 82px); }
       section { padding: 62px 0; }
@@ -507,6 +492,17 @@
           <strong>tools-core</strong>
         </span>
       </a>
+      <div class="ecosystem-rail__jumps" role="navigation" aria-label="On this page">
+        <a href="#projects">Projects</a>
+        <a href="#tools">Tools</a>
+        <a href="#contact">Contact</a>
+      </div>
+      <div class="ecosystem-rail__more" hidden>
+        <button class="ecosystem-rail__more-btn" type="button" aria-expanded="false"
+                aria-controls="ecosystem-page-sections">More</button>
+        <div class="ecosystem-rail__more-panel" id="ecosystem-page-sections" role="navigation"
+             aria-label="On this page" hidden></div>
+      </div>
       <button class="ecosystem-rail__brand" type="button" aria-expanded="false"
               aria-controls="ecosystem-projects" aria-label="Open workshop projects">
         <span class="ecosystem-rail__brand-label">Workshop</span>
@@ -527,16 +523,6 @@
         <a data-project="speech-core" style="--project-accent: var(--eco-speechcore)" href="https://github.com/snepssen/speech-core">speech-core</a>
         <a data-project="site-core" style="--project-accent: var(--eco-sitecore)" href="https://github.com/snepssen/site-core">site-core</a>
       </div>
-    </div>
-  </nav>
-  <nav class="site-nav" aria-label="Main navigation">
-    <div class="wrap nav-inner">
-      <a class="wordmark" href="#top"><span>~/</span>snepssen</a>
-      <ul class="nav-links">
-        <li><a href="#projects">Projects</a></li>
-        <li><a href="#tools">Tools</a></li>
-        <li><a href="#contact">Contact</a></li>
-      </ul>
     </div>
   </nav>
 
@@ -572,7 +558,7 @@
               <span class="project-no">01 / CARTOGRAPHY</span>
               <h3>Gateway Forge</h3>
               <p>A guided-meditation assembly system and journal that keeps the published map beside what was actually found—without forcing them into one answer.</p>
-              <div class="project-meta">Swift · SwiftUI · macOS + iOS companion · GPL-3.0-or-later</div>
+              <div class="project-meta">Swift · SwiftUI · <span class="project-platforms" data-project="gateway-forge">macOS</span> · GPL-3.0-or-later</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/gateway-forge/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/gateway-forge">GitHub</a>
@@ -588,7 +574,7 @@
               <span class="project-no">02 / SPEECH</span>
               <h3>Voice Forge</h3>
               <p>A text-to-speech instrument with the synthesiser’s timing controls exposed and measured instead of hidden behind one generic speed slider.</p>
-              <div class="project-meta">Swift + Electron · macOS, Linux, Windows · GPL-3.0-or-later</div>
+              <div class="project-meta">Swift + Electron · <span class="project-platforms" data-project="voice-forge">macOS · Linux · untested: Windows</span> · GPL-3.0-or-later</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/voice-forge/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/voice-forge">GitHub</a>
@@ -604,7 +590,7 @@
               <span class="project-no">03 / FACE</span>
               <h3>Protoke</h3>
               <p><em>proto</em> + <em>karaoke</em>. A karaoke and narration renderer fronted by a protogen visor face — two eyes and a mouth drawn as vector outlines and burned in by the same libass pass that draws the lyrics, so there is no image sequence to composite.</p>
-              <div class="project-meta">Python · macOS, Linux, Windows · MIT</div>
+              <div class="project-meta">Python · <span class="project-platforms" data-project="protoke">macOS · tested on Linux, Windows</span> · MIT</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/protoke/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/protoke">GitHub</a>
@@ -620,7 +606,7 @@
               <span class="project-no">04 / DELIVERY</span>
               <h3>Media Preflight</h3>
               <p>Check a finished file against where it is going — YouTube, ACX, EBU R 128, or a standard of your own — and get the exact timestamps of what is wrong. Then, optionally, a corrected copy that is measured again from scratch before it claims to be fixed. The original is never touched.</p>
-              <div class="project-meta">Python · macOS, Windows, Linux · MIT</div>
+              <div class="project-meta">Python · <span class="project-platforms" data-project="media-preflight">macOS · tested on Linux, Windows</span> · MIT</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/media-preflight/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/media-preflight">GitHub</a>
@@ -636,7 +622,7 @@
               <span class="project-no">05 / INTAKE</span>
               <h3>siphon</h3>
               <p>Paste a link and get the file — or point it at a folder you already have and get the same thing in a different shape. It is one pipeline either way, and it does not re-encode what it does not have to: asking for an mp4 that is already H.264 and AAC moves the streams into a new container and changes nothing else. Playlists from Deezer, Spotify and Tidal arrive tagged, covered and foldered, and a track it is not sure about stops and asks before it fetches.</p>
-              <div class="project-meta">Python · macOS, Windows, Linux · MIT</div>
+              <div class="project-meta">Python · <span class="project-platforms" data-project="siphon">macOS · tested on Linux · untested: Windows</span> · MIT</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/siphon/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/siphon">GitHub</a>
@@ -651,7 +637,7 @@
               <span class="project-no">06 / FILING</span>
               <h3>auto-sort</h3>
               <p>Empties a Downloads folder and keeps it empty. It works out what each file is from its bytes rather than its name, reads what documents call themselves, and once three of them share a heading they get a folder of their own. When it learns something new it goes back over what it already filed. Every move is written down and can be undone, and nothing is ever deleted: what goes, goes to the bin.</p>
-              <div class="project-meta">Python standard library · macOS, Linux, Windows · MIT</div>
+              <div class="project-meta">Python standard library · <span class="project-platforms" data-project="auto-sort">macOS · Linux · tested on Windows</span> · MIT</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/auto-sort/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/auto-sort">GitHub</a>
@@ -666,7 +652,7 @@
               <span class="project-no">07 / INTERPRETING</span>
               <h3>Interpreter</h3>
               <p>Live interpreting into English that waits for a complete thought, the way a human interpreter does, instead of translating every half-sentence. Polish, Hungarian or any of 25 languages around the table arrive in your ear a few seconds behind; English is left alone. Recognition, translation and the voice all run on the iPhone or Mac in front of you.</p>
-              <div class="project-meta">Swift · SwiftUI · macOS + iPhone · on-device</div>
+              <div class="project-meta">Swift · SwiftUI · <span class="project-platforms" data-project="interpreter-forge">macOS · iPhone · iPad · untested: Android</span> · GPL-3.0-or-later</div>
               <div class="project-actions">
                 <a class="button" href="https://snepssen.github.io/interpreter-forge/">Visit project</a>
                 <a class="button ghost" href="https://github.com/snepssen/interpreter-forge">GitHub</a>
@@ -908,56 +894,56 @@
         </div>
         <div class="ecosystem-grid">
           <a class="ecosystem-card" data-project="gateway-forge" style="--card-accent: var(--eco-gateway)" href="https://snepssen.github.io/gateway-forge/">
-            <div class="ecosystem-card__index"><span>01 / JOURNEYS</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__index"><span>01 / JOURNEYS</span><span>macOS</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">F10 ── F27</div>
             <h3>Gateway Forge</h3>
             <p>Assemble guided sessions and keep published maps beside what was actually found.</p>
             <span class="ecosystem-card__go">Explore Gateway Forge →</span>
           </a>
           <a class="ecosystem-card" data-project="voice-forge" style="--card-accent: var(--eco-voice)" href="https://snepssen.github.io/voice-forge/">
-            <div class="ecosystem-card__index"><span>02 / SPEECH</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__index"><span>02 / SPEECH</span><span>macOS · Linux · untested: Windows</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">⌁ / həˈləʊ /</div>
             <h3>Voice Forge</h3>
             <p>A transparent Piper workbench for timing, pronunciation, and honest audio export.</p>
             <span class="ecosystem-card__go">Explore Voice Forge →</span>
           </a>
           <a class="ecosystem-card" data-project="protoke" style="--card-accent: var(--eco-protoke)" href="https://snepssen.github.io/protoke/">
-            <div class="ecosystem-card__index"><span>03 / VIDEO</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__index"><span>03 / VIDEO</span><span>macOS · tested on Linux, Windows</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">◤ w ◥</div>
             <h3>Protoke</h3>
             <p>Karaoke and narration video with a vector visor face that mouths every word.</p>
             <span class="ecosystem-card__go">Explore Protoke →</span>
           </a>
           <a class="ecosystem-card" data-project="media-preflight" style="--card-accent: var(--eco-preflight)" href="https://snepssen.github.io/media-preflight/">
-            <div class="ecosystem-card__index"><span>04 / DELIVERY</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__index"><span>04 / DELIVERY</span><span>macOS · tested on Linux, Windows</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">✓ ≤ -3 dB</div>
             <h3>Media Preflight</h3>
             <p>Check a finished file against where it is going, and correct it without touching the original.</p>
             <span class="ecosystem-card__go">Explore Media Preflight →</span>
           </a>
           <a class="ecosystem-card" data-project="siphon" style="--card-accent: var(--eco-siphon)" href="https://snepssen.github.io/siphon/">
-            <div class="ecosystem-card__index"><span>05 / INTAKE</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__index"><span>05 / INTAKE</span><span>macOS · tested on Linux · untested: Windows</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">webm ⟶ mp3</div>
             <h3>siphon</h3>
             <p>Fetch from a link or convert what you already have, without re-encoding what it does not have to.</p>
             <span class="ecosystem-card__go">Explore siphon →</span>
           </a>
           <a class="ecosystem-card" data-project="auto-sort" style="--card-accent: var(--eco-autosort)" href="https://snepssen.github.io/auto-sort/">
-            <div class="ecosystem-card__index"><span>06 / FILING</span><span>macOS · Windows · Linux</span></div>
+            <div class="ecosystem-card__index"><span>06 / FILING</span><span>macOS · Linux · tested on Windows</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">↓ Downloads → ∅</div>
             <h3>auto-sort</h3>
             <p>Empty the Downloads funnel into structure the folder taught it, and undo any of it.</p>
             <span class="ecosystem-card__go">Explore auto-sort →</span>
           </a>
           <a class="ecosystem-card" data-project="interpreter-forge" style="--card-accent: var(--eco-interpreter)" href="https://snepssen.github.io/interpreter-forge/">
-            <div class="ecosystem-card__index"><span>07 / INTERPRETING</span><span>macOS · iPhone</span></div>
+            <div class="ecosystem-card__index"><span>07 / INTERPRETING</span><span>macOS · iPhone · iPad · untested: Android</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">halb elf → 10:30</div>
             <h3>Interpreter</h3>
             <p>Hear the table in English a few seconds behind, cut at the end of each thought, on your own phone.</p>
             <span class="ecosystem-card__go">Explore Interpreter →</span>
           </a>
           <a class="ecosystem-card" data-project="companion-forge" style="--card-accent: var(--eco-companion)" href="https://snepssen.github.io/companion-forge/">
-            <div class="ecosystem-card__index"><span>08 / COMPANION</span><span>Mac · iPhone · iPad</span></div>
+            <div class="ecosystem-card__index"><span>08 / COMPANION</span><span>macOS · iPhone · iPad</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">mic → visor</div>
             <h3>companion-forge</h3>
             <p>A local voice companion for Mac, iPhone and iPad, with a protogen LED-visor face.</p>
@@ -978,7 +964,7 @@
             <span class="ecosystem-card__go">Open the repository →</span>
           </a>
           <a class="ecosystem-card" data-project="voice-core" style="--card-accent: var(--eco-voicecore)" href="https://github.com/snepssen/voice-core">
-            <div class="ecosystem-card__index"><span>11 / ENGINE</span><span>Swift · macOS · iOS</span></div>
+            <div class="ecosystem-card__index"><span>11 / ENGINE</span><span>Swift · macOS · iOS · tested on Linux</span></div>
             <div class="ecosystem-card__glyph" aria-hidden="true">text → /ipa/ → ids</div>
             <h3>voice-core</h3>
             <p>The speech engine the apps share: espeak-ng, the phonemizer and Piper inference, from one source.</p>
