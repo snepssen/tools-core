@@ -12,10 +12,14 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[1]
+# Both apps' platform_support.py import workshop-core's shared package, which
+# each app carries in workshop/ (synced from github.com/snepssen/workshop-core),
+# so the engines carry it too or platform_support cannot be imported at all.
+WORKSHOP = ("workshop/__init__.py", "workshop/programs.py", "workshop/bootstrap.py")
 ENGINES = {
-    "caption-check": ("media-preflight", ("captions.py", "platform_support.py")),
+    "caption-check": ("media-preflight", ("captions.py", "platform_support.py") + WORKSHOP),
     "remux": ("siphon", ("formats.py", "platform_support.py",
-                         "engines/__init__.py", "engines/ffmpeg.py")),
+                         "engines/__init__.py", "engines/ffmpeg.py") + WORKSHOP),
 }
 
 
