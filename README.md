@@ -24,7 +24,7 @@ third-party source trees.
 | [`piper-workflows/`](piper-workflows/) | Piper training, export, render, audition, and direct-inference wrappers for known upstream failure modes | Python 3 plus a compatible Piper training environment | Primarily macOS/Linux | Yes |
 | [`remux/`](remux/) | Changes a media container by copying every supported stream; refuses encoding or track removal | Python 3.8+, FFmpeg and ffprobe | macOS verified; Windows/Linux unverified | A new copy |
 | [`tray-icon/`](tray-icon/) | Puts an icon with a menu in the menu bar, notification area or panel, each entry running a command. auto-sort's tray, kept identical to it | Python 3 standard library | macOS/Linux (seen); Windows (built to the documentation, not yet seen) | No |
-| [`tts-research/`](tts-research/) | Produces Qwen3-TTS tensor, tokenizer, and speaking-pace ground truth | Python 3, MLX, mlx-audio, Transformers | Apple silicon macOS | Yes |
+| [`tts-research/`](tts-research/) | Retired, kept for reference: produces Qwen3-TTS tensor, tokenizer, and speaking-pace ground truth | Python 3, MLX, mlx-audio, Transformers | Apple silicon macOS | Yes |
 | [`site-capture/`](site-capture/) | Photographs the workshop's project pages whole, in both themes, repeatably | Python 3 and Chrome or Chromium; Pillow to verify and trim | macOS/Linux | Yes |
 | [`site-fonts/`](site-fonts/) | Moves a page's webfonts out of Google and into its own repository, keeping only the cuts it uses | Python 3 and Chrome or Chromium | macOS/Linux | Yes |
 

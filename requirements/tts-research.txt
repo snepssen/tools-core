@@ -1,4 +1,4 @@
-# tts-research: Apple silicon only (MLX). The mlx-audio release whose Qwen3-TTS
+# tts-research (retired, kept for reference): Apple silicon only (MLX). The mlx-audio release whose Qwen3-TTS
 # internals qwen3-groundtruth.py reaches into; a newer one may rename them.
 #
 # Every package pinned, dependencies included: the set this tool was last run

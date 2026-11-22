@@ -1,4 +1,11 @@
-# Qwen3-TTS research tools
+# Qwen3-TTS research tools (retired)
+
+> **Retired.** Gateway Forge, which these were written for, has moved from
+> Qwen3-TTS to Piper, and no snepssen project uses Qwen3 any more. They are kept
+> as a reference for anyone porting Qwen3-TTS to another runtime: they still
+> run (last checked 2026-11-22 against the pinned
+> [`requirements/tts-research.txt`](../requirements/tts-research.txt)), but
+> nothing here will be updated for newer mlx-audio releases.
 
 Ground-truth generators for validating a native Qwen3-TTS implementation
 against the Python MLX reference:
