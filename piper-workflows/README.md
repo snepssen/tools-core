@@ -20,7 +20,13 @@ interactions; read each module docstring before using it.
   should point to a Piper `src` directory when Piper is not installed.
 
 Use a Piper training environment compatible with the checkpoint being tested.
-The `piper-tts` package alone may not expose training modules. Upstream Piper
+[`requirements/piper-workflows.txt`](../requirements/piper-workflows.txt) is the
+one the snepssen voices were trained, exported and rendered with: Piper 1.8.0
+with its `train` extra (plain `piper-tts` has no training modules), Lightning
+2.6.6, torch 2.14.1, ONNX Runtime 1.31.0. Keep that venv on a short path:
+Piper 1.8.0's espeak-ng gives up on its own data folder once that path reaches
+about 160 characters, and reports "Error processing file" for a `phontab` on
+the machine Piper was built on instead. Upstream Piper
 source is not vendored here. This directory is distributed under GPL-3.0-only
 because `export.py` adapts Piper's sequence-mask/path implementation; see
 `COPYING` and the source attribution in that file. Only load trusted PyTorch

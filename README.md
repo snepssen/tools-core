@@ -57,10 +57,18 @@ tests exercise real multi-track media when FFmpeg and ffprobe are installed.
 
 ## Dependency setup
 
-The small utilities use Python's standard library. Optional dependency groups
-are documented in [`requirements/`](requirements/). Large ML stacks are not
-installed automatically because compatible versions depend on the model and
-hardware being investigated.
+The small utilities use Python's standard library. The tools that need more
+have a file each in [`requirements/`](requirements/), with every package
+pinned, dependencies included, to the set the tool was last run with (Python
+3.12, macOS on Apple silicon), so an install next year gets a combination
+known to work rather than whatever is newest. Give each its own venv:
+
+```sh
+python3 -m venv .venv/audio-analysis && .venv/audio-analysis/bin/pip install -r requirements/audio-analysis.txt
+```
+
+The `.in` file beside each lists the direct choices; the `.txt` header says how
+to regenerate it after moving one.
 
 ## The wider workshop
 

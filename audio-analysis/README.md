@@ -19,6 +19,7 @@ Highlights:
 - `analyse-joins.py`, `analyse-onsets.py`, and `analyse-pace.py` inspect common
   rendering defects.
 
-Beat analysis requires NumPy, SciPy, and soundfile. Corpus cutting requires
-ffmpeg. `index-tapes.py GATEWAY_ROOT [--dry-run]` rewrites Markdown frontmatter,
+Beat analysis requires NumPy, SciPy, and soundfile, pinned in
+[`requirements/audio-analysis.txt`](../requirements/audio-analysis.txt). Corpus
+cutting requires ffmpeg. `index-tapes.py GATEWAY_ROOT [--dry-run]` rewrites Markdown frontmatter,
 so inspect its dry run first and use it only on a version-controlled checkout.

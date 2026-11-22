@@ -19,6 +19,7 @@ REPO = "mlx-community/Qwen3-TTS-12Hz-1.7B-Base-bf16"
 ap = argparse.ArgumentParser()
 ap.add_argument("--gateway-root", required=True,
                 help="Gateway Forge checkout containing voices/ and library/")
+ap.add_argument("--voice", default="M1")
 args = ap.parse_args()
 root = pathlib.Path(args.gateway_root).resolve()
 tok = AutoTokenizer.from_pretrained(REPO)
@@ -31,7 +32,7 @@ def add(*xs):
             cases.append(x)
 
 # 1. The chat strings ICL actually builds, verbatim from the reference.
-profile = json.loads((root / "voices/M1/profile.json").read_text())
+profile = json.loads((root / "voices" / args.voice / "profile.json").read_text())
 ref_text = profile["referenceText"].strip()
 line = ("You are now in Focus 12. A state of awareness far beyond your "
         "physical body.")

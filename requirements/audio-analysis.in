@@ -1,0 +1,5 @@
+# audio-analysis: the libraries its scripts import, at the versions they were
+# last run with.
+numpy==2.5.5
+scipy==1.18.1
+soundfile==0.14.0

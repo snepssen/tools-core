@@ -1,4 +1,59 @@
-mlx
-mlx-audio
-numpy
-transformers
+# tts-research: Apple silicon only (MLX). The mlx-audio release whose Qwen3-TTS
+# internals qwen3-groundtruth.py reaches into; a newer one may rename them.
+#
+# Every package pinned, dependencies included: the set this tool was last run
+# with (Python 3.12, macOS on Apple silicon, 2026-11-22), so a fresh install
+# gets that set rather than whatever is newest. Install into its own venv:
+#   python3 -m pip install -r requirements/tts-research.txt
+# The direct choices are in tts-research.in; to move them, edit it and run
+#   uv pip compile --universal --python-version 3.12 --annotation-style line \
+#     requirements/tts-research.in -o requirements/tts-research.txt
+
+annotated-doc==0.0.7      # via typer
+annotated-types==0.8.0    # via pydantic
+anyio==4.16.0             # via httpx2, mlx-audio
+certifi==2026.11.20       # via mlx-audio, requests
+cffi==2.1.1               # via miniaudio, sounddevice
+charset-normalizer==3.5.2  # via requests
+click==8.5.1              # via huggingface-hub
+colorama==0.4.6 ; sys_platform == 'win32'  # via tqdm, typer
+filelock==4.3.0           # via huggingface-hub, mlx-audio
+fsspec==2026.9.0          # via huggingface-hub, mlx-audio
+h11==0.16.0 ; sys_platform != 'emscripten'  # via httpcore2
+hf-xet==1.8.0 ; platform_machine == 'AMD64' or platform_machine == 'ARM64' or platform_machine == 'aarch64' or platform_machine == 'amd64' or platform_machine == 'arm64' or platform_machine == 'x86_64'  # via huggingface-hub
+httpcore2==2.16.2 ; sys_platform != 'emscripten'  # via httpx2
+httpx2==2.16.2            # via huggingface-hub
+httpx2-jsfetch==1.0 ; sys_platform == 'emscripten'  # via httpx2
+huggingface-hub==2.4.0    # via mlx-audio, tokenizers, transformers
+idna==3.20                # via anyio, httpx2, requests
+jinja2==3.1.6             # via mlx-audio, transformers
+markdown-it-py==4.3.0     # via rich
+markupsafe==3.0.4         # via jinja2
+mdurl==0.1.2              # via markdown-it-py
+miniaudio==1.73           # via mlx-audio
+mlx==0.32.4               # via mlx-audio, -r tts-research.in
+mlx-audio==0.6.7          # via -r tts-research.in
+mlx-metal==0.32.4 ; sys_platform == 'darwin'  # via mlx
+numpy==2.5.5              # via mlx-audio, scipy, transformers, -r tts-research.in
+packaging==26.3           # via huggingface-hub, transformers
+pycparser==3.12 ; implementation_name != 'PyPy'  # via cffi
+pydantic==2.14.4          # via typer
+pydantic-core==2.50.5     # via pydantic
+pygments==2.21.0          # via rich
+pyyaml==6.0.4             # via huggingface-hub, transformers
+regex==2026.11.19         # via transformers
+requests==2.34.2          # via mlx-audio
+rich==15.0.0              # via typer
+safetensors==0.8.0        # via transformers
+scipy==1.18.1             # via mlx-audio
+sentencepiece==0.2.3      # via mlx-audio
+shellingham==1.5.4        # via typer
+sounddevice==0.5.6        # via mlx-audio
+tokenizers==0.23.3        # via transformers
+tqdm==4.70.1              # via huggingface-hub, mlx-audio, transformers
+transformers==5.24.0      # via mlx-audio, -r tts-research.in
+truststore==0.10.5 ; sys_platform != 'emscripten'  # via httpcore2, httpx2
+typer==0.29.2             # via transformers
+typing-extensions==4.16.0  # via anyio, httpx2, huggingface-hub, pydantic, pydantic-core, typing-inspection
+typing-inspection==0.4.5  # via pydantic
+urllib3==2.8.0            # via mlx-audio, requests

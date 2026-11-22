@@ -1,0 +1,9 @@
+# piper-workflows: Piper 1.8.0 with its training extra (Lightning, which
+# train.py's fixes are written against), and the torch and ONNX Runtime the
+# snepssen voices were trained, exported and rendered with (voice-polyglot's
+# uv.lock).
+piper-tts[train]==1.8.0
+lightning==2.6.6
+torch==2.14.1
+onnxruntime==1.31.0
+numpy==2.5.4

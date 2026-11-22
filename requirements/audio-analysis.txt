@@ -1,3 +1,17 @@
-numpy
-scipy
-soundfile
+# audio-analysis: the libraries its scripts import, at the versions they were
+# last run with.
+#
+# Every package pinned, dependencies included: the set this tool was last run
+# with (Python 3.12, macOS on Apple silicon, 2026-11-22), so a fresh install
+# gets that set rather than whatever is newest. Install into its own venv:
+#   python3 -m pip install -r requirements/audio-analysis.txt
+# The direct choices are in audio-analysis.in; to move them, edit it and run
+#   uv pip compile --universal --python-version 3.12 --annotation-style line \
+#     requirements/audio-analysis.in -o requirements/audio-analysis.txt
+
+cffi==2.1.1               # via soundfile
+numpy==2.5.5              # via scipy, soundfile, -r audio-analysis.in
+pycparser==3.12 ; implementation_name != 'PyPy'  # via cffi
+scipy==1.18.1             # via -r audio-analysis.in
+soundfile==0.14.0         # via -r audio-analysis.in
+typing-extensions==4.16.0  # via soundfile

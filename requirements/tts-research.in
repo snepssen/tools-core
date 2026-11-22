@@ -1,0 +1,6 @@
+# tts-research: Apple silicon only (MLX). The mlx-audio release whose Qwen3-TTS
+# internals qwen3-groundtruth.py reaches into; a newer one may rename them.
+mlx==0.32.4
+mlx-audio==0.6.7
+numpy==2.5.5
+transformers==5.24.0

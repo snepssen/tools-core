@@ -1,5 +1,14 @@
-# Optional. site-capture/shoot-pages.py takes its screenshots without this;
+# site-capture: optional. shoot-pages.py takes its screenshots without this;
 # Pillow is what checks each capture ended where the page ended, trims an
 # overshoot, and assembles the contact sheet. Without it the captures are
 # taken unverified and the script says so.
-Pillow>=10.0
+#
+# Every package pinned, dependencies included: the set this tool was last run
+# with (Python 3.12, macOS on Apple silicon, 2026-11-22), so a fresh install
+# gets that set rather than whatever is newest. Install into its own venv:
+#   python3 -m pip install -r requirements/site-capture.txt
+# The direct choices are in site-capture.in; to move them, edit it and run
+#   uv pip compile --universal --python-version 3.12 --annotation-style line \
+#     requirements/site-capture.in -o requirements/site-capture.txt
+
+pillow==13.0.0            # via -r site-capture.in
