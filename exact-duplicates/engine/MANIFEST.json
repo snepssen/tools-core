@@ -1,5 +1,5 @@
 {
-  "commit": "91122c81089f1fd5a013d2b061a8459e14bb0959",
+  "commit": "da46c3dd552cb1bea05f43447760e1d5a4183fa8",
   "files": {
     "bundles.py": "1e7e40461294f847d1e68fb07bc2b63e114bc5d973b5608460b26b1d140b5f3b",
     "duplicates.py": "4185f06afb020d475dad3a84d7c1ef7fa100de8d2f00479c67d90865056497cc",
@@ -10,5 +10,5 @@
     "winapi.py": "2981f22ccd842bca9f780bb2161f397fb363e6d5ceb16f451e2786595b4d2218"
   },
   "from": "https://github.com/snepssen/auto-sort",
-  "version": "0.9.0"
+  "version": "0.9.1"
 }
